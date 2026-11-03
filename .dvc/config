@@ -1,4 +1,5 @@
 [core]
     remote = localstore
+    analytics = false
 ['remote "localstore"']
     url = C:\dev\dvc-store
