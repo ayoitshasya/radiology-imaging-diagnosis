@@ -1,6 +1,6 @@
 """Sanity checks for config.yaml and the project scaffold."""
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import yaml
 
@@ -14,8 +14,20 @@ def load_config() -> dict:
 
 def test_config_has_required_sections():
     cfg = load_config()
-    for section in ("project", "paths", "data", "classification", "segmentation"):
+    for section in ("project", "paths", "data", "classification", "explainability"):
         assert section in cfg, f"missing section: {section}"
+
+
+def test_segmentation_is_out_of_scope():
+    assert "segmentation" not in load_config()
+
+
+def test_paths_are_relative_to_repo_root():
+    # Absolute paths tie the config to one machine. PureWindowsPath catches drive paths
+    # such as C:/...; it does not treat a bare "/" root as absolute, so check that too.
+    for key, value in load_config()["paths"].items():
+        assert not PureWindowsPath(value).is_absolute(), f"absolute path in paths.{key}"
+        assert not str(value).startswith("/"), f"absolute path in paths.{key}"
 
 
 def test_split_fractions_leave_training_data():

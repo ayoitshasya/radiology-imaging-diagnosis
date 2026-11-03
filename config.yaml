@@ -11,17 +11,15 @@ paths:
   models: models
   reports: reports
   notebooks: notebooks
-  dvc_remote: C:/dev/dvc-store
 
 data:
-  image_size: [224, 224]      # 2D classification input (H, W)
-  volume_size: [128, 128, 64] # 3D segmentation input (H, W, D)
+  image_size: [224, 224]  # (H, W); DenseNet121 ImageNet weights expect 224x224
   val_split: 0.15
   test_split: 0.15
   num_workers: 4
 
 classification:
-  backbone: resnet50
+  backbone: densenet121
   pretrained: true
   num_classes: 2
   batch_size: 32
@@ -32,19 +30,11 @@ classification:
   scheduler: cosine
   early_stopping_patience: 5
 
-segmentation:
-  architecture: unet
-  in_channels: 1
-  out_channels: 2
-  batch_size: 2
-  epochs: 100
-  optimizer: adam
-  learning_rate: 1.0e-4
-  loss: dice_ce
-  roi_size: [96, 96, 96]
-
 explainability:
   method: gradcam
-  target_layer: layer4
+  # Last dense block: deepest layer that still has spatial resolution.
+  # Limitation: the module name differs between torchvision and MONAI
+  # DenseNet121; confirm it once the model implementation is chosen.
+  target_layer: features.denseblock4
 
 device: cpu
