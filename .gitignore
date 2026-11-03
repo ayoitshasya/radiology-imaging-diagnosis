@@ -1,6 +1,4 @@
-# Local assistant files and environment backups (never commit)
-CLAUDE.md
-.claude/
+# Local environment backup (never commit)
 system_packages_backup.txt
 
 # Python
