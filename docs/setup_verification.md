@@ -52,6 +52,7 @@ to `system_packages_backup.txt` (gitignored).
 ## DVC
 
 - `dvc init` done; default remote `localstore` -> `C:\dev\dvc-store`.
+- Usage analytics disabled in the repository config (`core.analytics = false`).
 - No data tracked yet.
 
 ## Issues encountered and how they were resolved
@@ -72,8 +73,6 @@ to `system_packages_backup.txt` (gitignored).
   before downloading datasets. Not checked or configured during setup.
 - **`.env`:** copy `.env.example` to `.env` and fill in the Postgres and
   Orthanc credentials before running the backend or containers.
-- **DVC analytics:** DVC enabled anonymous usage analytics by default.
-  Opt out with `dvc config core.analytics false` if preferred.
 - **DVC remote path** is machine-specific. On another machine, override it
   with `dvc remote modify --local localstore url <path>`.
 - **Line endings:** global `core.autocrlf=true` converts LF to CRLF on
