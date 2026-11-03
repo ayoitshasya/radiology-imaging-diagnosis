@@ -1,0 +1,53 @@
+# Local assistant files and environment backups (never commit)
+CLAUDE.md
+.claude/
+system_packages_backup.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.next/
+frontend/dist/
+
+# Data and models (tracked with DVC, not git)
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+!/data/**/*.dvc
+/models/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.nii
+*.nii.gz
+*.dcm
+
+# Secrets
+.env
+.env.*
+!.env.example
+kaggle.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

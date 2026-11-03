@@ -1,0 +1,50 @@
+# Central project configuration. Paths are relative to the repository root.
+# Secrets (database passwords, API tokens) belong in .env, never here.
+
+project:
+  name: radiology-imaging-diagnosis
+  seed: 42
+
+paths:
+  data_raw: data/raw
+  data_processed: data/processed
+  models: models
+  reports: reports
+  notebooks: notebooks
+  dvc_remote: C:/dev/dvc-store
+
+data:
+  image_size: [224, 224]      # 2D classification input (H, W)
+  volume_size: [128, 128, 64] # 3D segmentation input (H, W, D)
+  val_split: 0.15
+  test_split: 0.15
+  num_workers: 4
+
+classification:
+  backbone: resnet50
+  pretrained: true
+  num_classes: 2
+  batch_size: 32
+  epochs: 30
+  optimizer: adamw
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-5
+  scheduler: cosine
+  early_stopping_patience: 5
+
+segmentation:
+  architecture: unet
+  in_channels: 1
+  out_channels: 2
+  batch_size: 2
+  epochs: 100
+  optimizer: adam
+  learning_rate: 1.0e-4
+  loss: dice_ce
+  roi_size: [96, 96, 96]
+
+explainability:
+  method: gradcam
+  target_layer: layer4
+
+device: cpu
