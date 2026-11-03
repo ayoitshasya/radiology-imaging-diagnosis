@@ -1,0 +1,46 @@
+# Pinned from the verified "medimg" environment (Python 3.11).
+# Install torch/torchvision CPU builds from the PyTorch index:
+#   pip install -r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Deep learning (CPU builds)
+torch==2.15.0+cpu
+torchvision==0.29.2+cpu
+
+# Medical imaging
+monai==1.6.1
+nibabel==5.4.2
+SimpleITK==2.5.7
+pydicom==3.0.2
+pylibjpeg==2.1.0
+pylibjpeg-libjpeg==2.5.0
+python-gdcm==3.2.6
+
+# Data science
+numpy==2.4.6
+pandas==3.1.0
+scikit-learn==1.9.1
+matplotlib==3.11.2
+opencv-python-headless==5.0.0.93
+pyyaml==6.0.3  # config.yaml loading
+
+# Explainability
+grad-cam==1.5.7
+
+# Backend
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.6
+psycopg2-binary==2.9.13
+python-multipart==0.0.33
+alembic==1.20.1
+
+# Data versioning and datasets
+dvc==3.67.1
+kaggle==2.2.5
+six==1.17.0  # undeclared runtime dependency of kaggle
+
+# Dev and test
+pytest==9.2.0
+pytest-cov==7.1.0
+ruff==0.17.3
