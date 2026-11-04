@@ -122,7 +122,8 @@ def plot_curves(history: list[dict], path: Path) -> None:
     ax_loss.plot(epochs, [h["val_loss"] for h in history], marker="o", label="val")
     ax_loss.set(xlabel="epoch", ylabel="BCE loss (pos-weighted)", title="Loss")
     ax_loss.legend()
-    ax_auc.plot(epochs, [h["val_auroc"] for h in history], marker="o", color="tab:green")
+    aurocs = [np.nan if h["val_auroc"] is None else h["val_auroc"] for h in history]
+    ax_auc.plot(epochs, aurocs, marker="o", color="tab:green")
     ax_auc.set(xlabel="epoch", ylabel="AUROC", title="Validation AUROC")
     fig.tight_layout()
     fig.savefig(path, dpi=120)
@@ -185,7 +186,8 @@ def train(
                 "epoch": epoch,
                 "train_loss": round(train_loss, 5),
                 "val_loss": round(val_loss, 5),
-                "val_auroc": round(val_auroc, 5),
+                # NaN (single-class val) is stored as None so the log stays valid JSON.
+                "val_auroc": None if np.isnan(val_auroc) else round(val_auroc, 5),
                 "lr": lr,
             }
         )
@@ -228,12 +230,20 @@ def train(
         "n_train": len(train_ds),
         "n_val": len(val_ds),
         "best_epoch": best_epoch,
-        "best_val_auroc": round(best_auroc, 5),
+        "best_val_auroc": round(best_auroc, 5) if best_epoch else None,
         "stopped_early": len(history) < epochs,
         "epochs": history,
     }
-    (reports_dir / "training_log.json").write_text(json.dumps(log, indent=2) + "\n", "utf-8")
+    log_text = json.dumps(log, indent=2, allow_nan=False) + "\n"
+    (reports_dir / "training_log.json").write_text(log_text, "utf-8")
     plot_curves(history, reports_dir / "training_curves.png")
+    if not best_epoch:
+        # Write the log first so the failed run can be inspected, then fail loudly rather
+        # than finish "successfully" with no checkpoint for evaluate.py to load.
+        raise RuntimeError(
+            "Validation AUROC was undefined in every epoch (val split has a single class); "
+            "no checkpoint was saved"
+        )
     print(
         f"best epoch {best_epoch} val_auroc={best_auroc:.4f}; "
         f"checkpoint: {models_dir / CHECKPOINT_NAME}"
