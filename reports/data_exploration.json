@@ -1,0 +1,95 @@
+{
+  "seed": 42,
+  "n_sample_patients": 600,
+  "example_dicom": {
+    "Modality": "CR",
+    "PhotometricInterpretation": "MONOCHROME2",
+    "Rows": 1024,
+    "Columns": 1024,
+    "BitsStored": 8,
+    "PixelSpacing": [
+      0.168,
+      0.168
+    ],
+    "ViewPosition": "AP",
+    "PatientSex": "F",
+    "PatientAge": "52"
+  },
+  "example_pixels": {
+    "dtype": "uint8",
+    "raw_min": 0,
+    "raw_max": 255,
+    "has_voi_or_window": false,
+    "changed_by_voi_and_polarity": false
+  },
+  "full_labels": {
+    "label_rows": 30227,
+    "unique_patients": 26684,
+    "patients_target_1": 6012,
+    "patients_target_0": 20672,
+    "positive_fraction": 0.2253,
+    "class_counts": {
+      "No Lung Opacity / Not Normal": 11821,
+      "Normal": 8851,
+      "Lung Opacity": 6012
+    },
+    "max_rows_per_patient": 4
+  },
+  "leakage": {
+    "patients_with_multiple_rows": 3398,
+    "rows_from_those_patients": 6941,
+    "multi_row_patients_all_target_1": true,
+    "sample_unique_patients": 600,
+    "sample_label_rows": 777,
+    "sample_dicom_files": 600
+  },
+  "sample_images": {
+    "sizes": {
+      "1024x1024": 600
+    },
+    "bits_stored": {
+      "8": 600
+    },
+    "photometric": {
+      "MONOCHROME2": 600
+    },
+    "intensity_summary": {
+      "min": {
+        "count": 600.0,
+        "mean": 0.41,
+        "std": 2.08,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "max": 20.0
+      },
+      "mean": {
+        "count": 600.0,
+        "mean": 123.31,
+        "std": 22.01,
+        "min": 41.67,
+        "25%": 109.31,
+        "50%": 119.47,
+        "75%": 134.57,
+        "max": 188.46
+      },
+      "max": {
+        "count": 600.0,
+        "mean": 247.65,
+        "std": 15.54,
+        "min": 155.0,
+        "25%": 247.0,
+        "50%": 255.0,
+        "75%": 255.0,
+        "max": 255.0
+      }
+    },
+    "view_by_target": {
+      "AP_target_0": 112,
+      "AP_target_1": 217,
+      "PA_target_0": 188,
+      "PA_target_1": 83
+    }
+  }
+}
