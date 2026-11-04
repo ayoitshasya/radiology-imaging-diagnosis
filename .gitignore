@@ -30,6 +30,8 @@ frontend/dist/
 !/data/**/.gitkeep
 !/data/**/*.dvc
 /models/
+# Smoke-test outputs are pipeline checks, never results
+/reports/smoke/
 *.pt
 *.pth
 *.ckpt

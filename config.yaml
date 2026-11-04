@@ -38,22 +38,34 @@ preprocess:
   size: 224
 
 classification:
-  backbone: densenet121
-  pretrained: true
-  num_classes: 2
-  batch_size: 32
+  backbone: densenet121       # torchvision implementation
+  pretrained: true            # ImageNet weights
+  data_dir: data/processed/rsna_sample
+  models_dir: models
+  reports_dir: reports
+  batch_size: 32              # sized for a Kaggle GPU; pass --batch-size locally
   epochs: 30
-  optimizer: adamw
   learning_rate: 1.0e-4
   weight_decay: 1.0e-5
-  scheduler: cosine
+  grad_clip_norm: 1.0
+  plateau_factor: 0.5         # LR multiplier when val AUROC stops improving
+  plateau_patience: 2
   early_stopping_patience: 5
+  smoke:                      # --smoke-test: pipeline check only, metrics are meaningless
+    epochs: 2
+    train_images: 64
+    val_images: 32
+    batch_size: 4
+
+evaluation:
+  bootstrap_resamples: 1000
+  ci_level: 0.95
+  calibration_bins: 10
 
 explainability:
   method: gradcam
-  # Last dense block: deepest layer that still has spatial resolution.
-  # Limitation: the module name differs between torchvision and MONAI
-  # DenseNet121; confirm it once the model implementation is chosen.
+  # Last dense block of torchvision's DenseNet121: the deepest layer that still has
+  # spatial resolution, so the heatmap can be mapped back onto the image.
   target_layer: features.denseblock4
 
 device: cpu
