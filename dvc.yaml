@@ -1,0 +1,25 @@
+vars:
+  - config.yaml:preprocess,project
+
+stages:
+  preprocess:
+    cmd: >-
+      python ml/preprocessing/build_dataset.py
+      --input ${preprocess.input}
+      --labels ${preprocess.labels}
+      --output ${preprocess.output}
+      --size ${preprocess.size}
+      --seed ${project.seed}
+      --report ${preprocess.report}
+    deps:
+      - ml/preprocessing/build_dataset.py
+      - data/raw/rsna_sample
+    params:
+      - config.yaml:
+          - preprocess
+          - project.seed
+    outs:
+      - ${preprocess.output}
+    metrics:
+      - ${preprocess.report}:
+          cache: false

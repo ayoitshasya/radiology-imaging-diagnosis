@@ -1,0 +1,37 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python ml/preprocessing/build_dataset.py --input 
+      data/raw/rsna_sample/stage_2_train_images --labels 
+      data/raw/rsna_sample/stage_2_train_labels.csv --output 
+      data/processed/rsna_sample --size 224 --seed 42 --report 
+      reports/preprocessing_summary.json
+    deps:
+    - path: data/raw/rsna_sample
+      hash: md5
+      md5: 304a8d77b52f8e2de3ba2d3ff76e3ad3.dir
+      size: 81609580
+      nfiles: 603
+    - path: ml/preprocessing/build_dataset.py
+      hash: md5
+      md5: 4d6eb397f226bb0151a3adc24f103ad1
+      size: 9859
+    params:
+      config.yaml:
+        preprocess:
+          input: data/raw/rsna_sample/stage_2_train_images
+          labels: data/raw/rsna_sample/stage_2_train_labels.csv
+          output: data/processed/rsna_sample
+          report: reports/preprocessing_summary.json
+          size: 224
+        project.seed: 42
+    outs:
+    - path: data/processed/rsna_sample
+      hash: md5
+      md5: a835da9892de3671aababb5f910514ae.dir
+      size: 15650562
+      nfiles: 601
+    - path: reports/preprocessing_summary.json
+      hash: md5
+      md5: c90702cc907753e7d8783a82ce640031
+      size: 1326

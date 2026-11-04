@@ -1,0 +1,66 @@
+{
+  "seed": 42,
+  "size": 224,
+  "images": 600,
+  "skipped_existing": 0,
+  "unlabeled": 0,
+  "splits": {
+    "train": {
+      "images": 420,
+      "patients": 420,
+      "positive": 210,
+      "negative": 210,
+      "positive_rate": 0.5,
+      "views": {
+        "AP": {
+          "images": 234,
+          "positive": 153,
+          "positive_rate": 0.6538
+        },
+        "PA": {
+          "images": 186,
+          "positive": 57,
+          "positive_rate": 0.3065
+        }
+      }
+    },
+    "val": {
+      "images": 90,
+      "patients": 90,
+      "positive": 45,
+      "negative": 45,
+      "positive_rate": 0.5,
+      "views": {
+        "AP": {
+          "images": 49,
+          "positive": 34,
+          "positive_rate": 0.6939
+        },
+        "PA": {
+          "images": 41,
+          "positive": 11,
+          "positive_rate": 0.2683
+        }
+      }
+    },
+    "test": {
+      "images": 90,
+      "patients": 90,
+      "positive": 45,
+      "negative": 45,
+      "positive_rate": 0.5,
+      "views": {
+        "AP": {
+          "images": 46,
+          "positive": 30,
+          "positive_rate": 0.6522
+        },
+        "PA": {
+          "images": 44,
+          "positive": 15,
+          "positive_rate": 0.3409
+        }
+      }
+    }
+  }
+}

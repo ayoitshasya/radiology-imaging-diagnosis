@@ -28,6 +28,15 @@ rsna_sample:
   max_retries: 3
   min_free_gb: 2
 
+preprocess:
+  input: data/raw/rsna_sample/stage_2_train_images
+  labels: data/raw/rsna_sample/stage_2_train_labels.csv
+  output: data/processed/rsna_sample
+  report: reports/preprocessing_summary.json
+  # Resolution stored on disk. Kept separate from data.image_size (the model input) so
+  # images could later be stored larger and cropped without re-running preprocessing.
+  size: 224
+
 classification:
   backbone: densenet121
   pretrained: true
