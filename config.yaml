@@ -18,6 +18,16 @@ data:
   test_split: 0.15
   num_workers: 4
 
+rsna_sample:
+  competition: rsna-pneumonia-detection-challenge
+  dir: data/raw/rsna_sample
+  images_subdir: stage_2_train_images
+  labels_csv: stage_2_train_labels.csv
+  class_info_csv: stage_2_detailed_class_info.csv
+  per_class: 300       # patients with Target=1 and with Target=0
+  max_retries: 3
+  min_free_gb: 2
+
 classification:
   backbone: densenet121
   pretrained: true
