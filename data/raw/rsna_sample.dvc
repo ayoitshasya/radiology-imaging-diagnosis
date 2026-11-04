@@ -1,0 +1,6 @@
+outs:
+- md5: 304a8d77b52f8e2de3ba2d3ff76e3ad3.dir
+  size: 81609580
+  nfiles: 603
+  hash: md5
+  path: rsna_sample
