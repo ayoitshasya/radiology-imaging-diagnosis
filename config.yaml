@@ -84,6 +84,15 @@ orthanc_upload:
   raw_glob: data/raw/*/stage_2_train_images/*.dcm
   timeout_seconds: 30
 
+backend:
+  model_name: densenet121-rsna-pneumonia
+  checkpoint: models/densenet121_best.pt
+  checkpoint_dvc: models/densenet121_best.pt.dvc   # pulled at startup if the .pt is missing
+  # The decision threshold is read from here (chosen on validation), never hard coded.
+  metrics_report: reports/classification_metrics.json
+  orthanc_timeout_seconds: 10
+  notice: "Educational use only. Not for clinical use."
+
 evaluation:
   bootstrap_resamples: 1000
   ci_level: 0.95
