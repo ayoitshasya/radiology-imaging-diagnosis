@@ -75,5 +75,18 @@ explainability:
   # Last dense block of torchvision's DenseNet121: the deepest layer that still has
   # spatial resolution, so the heatmap can be mapped back onto the image.
   target_layer: features.denseblock4
+  checkpoint: models/densenet121_best.pt
+  # The validation-chosen threshold is read from here, so true positives are defined
+  # without looking at test data.
+  metrics_report: reports/classification_metrics.json
+  output_dir: data/demo/gradcam   # overlays contain X-ray pixels; data/ is gitignored
+  validation:                     # local defaults; Kaggle passes its own paths
+    data_dir: data/demo
+    manifest: test_studies.csv
+    split: test
+    dicom_dir: data/raw/rsna_sample/stage_2_train_images
+    labels: data/raw/rsna_sample/stage_2_train_labels.csv
+    report: reports/gradcam_localisation_demo.json
+    bootstrap_resamples: 1000
 
 device: cpu
