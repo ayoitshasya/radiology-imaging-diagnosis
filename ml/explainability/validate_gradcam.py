@@ -33,12 +33,16 @@ import pandas as pd
 import pydicom
 import torch
 from matplotlib.figure import Figure
-from torch import nn
 from tqdm import tqdm
 
 from ml.classification.common import ROOT, build_model, load_config, set_seed
 from ml.classification.evaluate import finite_or_none
-from ml.explainability.gradcam import compute_heatmap, load_image, load_model, to_input_tensor
+from ml.explainability.gradcam import (
+    compute_heatmap,
+    load_image,
+    load_model,
+    predict_probability,
+)
 
 METHODS = ("trained", "random_init", "uniform")
 
@@ -137,13 +141,6 @@ def study_lookup(dicom_dir: Path, wanted: set[str]) -> dict[str, tuple[str, int,
     if len(found) != len(wanted):
         raise RuntimeError(f"{len(wanted) - len(found)} studies have no DICOM in {dicom_dir}")
     return found
-
-
-@torch.no_grad()
-def predict_probability(model: nn.Module, img: np.ndarray) -> float:
-    """Pneumonia probability for one preprocessed image."""
-    device = next(model.parameters()).device
-    return float(torch.sigmoid(model(to_input_tensor(img).to(device))).item())
 
 
 def plot_histogram(scores: pd.DataFrame, path: Path) -> None:

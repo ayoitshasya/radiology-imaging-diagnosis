@@ -159,3 +159,15 @@ def test_random_baseline_and_validation_run_end_to_end_without_patient_ids(tmp_p
     json.loads(text, parse_constant=lambda c: pytest.fail(f"non-JSON {c}"))
     assert not any(pid in text for pid in patients)
     assert (tmp_path / "report.png").is_file()
+
+
+def test_predict_probability_is_sigmoid_of_logit_and_shared(random_model, image):
+    import ml.explainability.validate_gradcam as vg
+    from ml.explainability.gradcam import predict_probability, to_input_tensor
+
+    p = predict_probability(random_model, image)
+    with torch.no_grad():
+        expected = torch.sigmoid(random_model(to_input_tensor(image))).item()
+    assert 0.0 <= p <= 1.0
+    assert p == pytest.approx(expected)
+    assert vg.predict_probability is predict_probability  # one definition, reused

@@ -60,6 +60,13 @@ def to_input_tensor(img: np.ndarray) -> torch.Tensor:
     return build_transform(train=False)(torch.from_numpy(img).unsqueeze(0)).unsqueeze(0)
 
 
+@torch.no_grad()
+def predict_probability(model: nn.Module, img: np.ndarray) -> float:
+    """Pneumonia probability (sigmoid of the single logit) for one preprocessed image."""
+    device = next(model.parameters()).device
+    return float(torch.sigmoid(model(to_input_tensor(img).to(device))).item())
+
+
 def normalise_heatmap(cam: np.ndarray) -> np.ndarray:
     """Min-max scale a heatmap to [0, 1].
 

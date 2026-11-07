@@ -73,6 +73,15 @@ def resize_square(img: np.ndarray, size: int) -> np.ndarray:
     return cv2.resize(img, (size, size), interpolation=cv2.INTER_AREA)
 
 
+def preprocess_dicom(ds: pydicom.Dataset, size: int) -> np.ndarray:
+    """Turn a DICOM into the model's input image: 8-bit, bright-is-high, ``size`` square.
+
+    This is the single definition of preprocessing, shared by dataset building and the
+    inference API, so a served image is processed exactly like a training image.
+    """
+    return resize_square(dicom_to_uint8(ds), size)
+
+
 def age_bin(age: object) -> str:
     """Bin a DICOM PatientAge value into decades such as ``"50-59"``.
 
@@ -176,7 +185,7 @@ def run(
         if png_is_valid(png_path, size):
             skipped_existing += 1
         else:
-            img = resize_square(dicom_to_uint8(pydicom.dcmread(dcm_path)), size)
+            img = preprocess_dicom(pydicom.dcmread(dcm_path), size)
             if not cv2.imwrite(str(png_path), img):
                 raise OSError(f"Could not write PNG for image_id {image_id}")
         rows.append(

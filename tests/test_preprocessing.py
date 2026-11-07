@@ -159,3 +159,13 @@ def test_dataset_returns_3x224x224_float_tensor(built, split):
     std = torch.tensor(IMAGENET_STD).view(3, 1, 1)
     raw = image * std + mean
     assert torch.allclose(raw[0], raw[1], atol=1e-5) and torch.allclose(raw[1], raw[2], atol=1e-5)
+
+
+def test_preprocess_dicom_inverts_and_resizes_like_the_pipeline(tmp_path):
+    from ml.preprocessing.build_dataset import preprocess_dicom, resize_square
+
+    pixels = np.random.default_rng(3).integers(0, 256, (256, 256)).astype(np.uint8)
+    ds = pydicom.dcmread(write_dicom(tmp_path / "m1.dcm", pixels, photometric="MONOCHROME1"))
+    out = preprocess_dicom(ds, 224)
+    assert out.shape == (224, 224) and out.dtype == np.uint8
+    np.testing.assert_array_equal(out, resize_square(255 - pixels, 224))
