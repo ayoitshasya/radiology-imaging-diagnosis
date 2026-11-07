@@ -1,0 +1,213 @@
+{
+  "seed": 42,
+  "split": "test",
+  "manifest": "test_studies.csv",
+  "threshold": 0.480127,
+  "threshold_source": "validation split (Youden J), from classification_metrics.json",
+  "target_layer": "features.denseblock4",
+  "positives_in_split": 40,
+  "true_positives_scored": 35,
+  "true_positives_without_boxes": 0,
+  "trained_all_zero_heatmaps": 0,
+  "random_init_all_zero_heatmaps": 0,
+  "mean_box_area_fraction": 0.1461,
+  "overall": {
+    "methods": {
+      "trained": {
+        "mass_in_box": {
+          "mean": 0.2687,
+          "ci_low": 0.2139,
+          "ci_high": 0.3244,
+          "n": 35
+        },
+        "pointing_game": {
+          "mean": 0.4,
+          "ci_low": 0.2286,
+          "ci_high": 0.5714,
+          "n": 35
+        },
+        "median_mass_in_box": 0.2683
+      },
+      "random_init": {
+        "mass_in_box": {
+          "mean": 0.1176,
+          "ci_low": 0.0936,
+          "ci_high": 0.1436,
+          "n": 35
+        },
+        "pointing_game": {
+          "mean": 0.1429,
+          "ci_low": 0.0286,
+          "ci_high": 0.2857,
+          "n": 35
+        },
+        "median_mass_in_box": 0.1033
+      },
+      "uniform": {
+        "mass_in_box": {
+          "mean": 0.1461,
+          "ci_low": 0.1151,
+          "ci_high": 0.1785,
+          "n": 35
+        },
+        "pointing_game": {
+          "mean": 0.1461,
+          "ci_low": 0.1151,
+          "ci_high": 0.1785,
+          "n": 35
+        },
+        "median_mass_in_box": 0.1293
+      }
+    },
+    "paired_differences": {
+      "trained_minus_uniform_mass": {
+        "mean": 0.1226,
+        "ci_low": 0.0966,
+        "ci_high": 0.1487,
+        "n": 35,
+        "share_of_images_trained_higher": 0.9429
+      },
+      "trained_minus_random_init_mass": {
+        "mean": 0.1512,
+        "ci_low": 0.1154,
+        "ci_high": 0.1884,
+        "n": 35,
+        "share_of_images_trained_higher": 0.9429
+      }
+    }
+  },
+  "by_view": {
+    "AP": {
+      "n": 28,
+      "methods": {
+        "trained": {
+          "mass_in_box": {
+            "mean": 0.2997,
+            "ci_low": 0.2415,
+            "ci_high": 0.3596,
+            "n": 28
+          },
+          "pointing_game": {
+            "mean": 0.3929,
+            "ci_low": 0.2143,
+            "ci_high": 0.5714,
+            "n": 28
+          },
+          "median_mass_in_box": 0.3069
+        },
+        "random_init": {
+          "mass_in_box": {
+            "mean": 0.1332,
+            "ci_low": 0.1074,
+            "ci_high": 0.1644,
+            "n": 28
+          },
+          "pointing_game": {
+            "mean": 0.1429,
+            "ci_low": 0.0357,
+            "ci_high": 0.2857,
+            "n": 28
+          },
+          "median_mass_in_box": 0.1339
+        },
+        "uniform": {
+          "mass_in_box": {
+            "mean": 0.1673,
+            "ci_low": 0.133,
+            "ci_high": 0.2056,
+            "n": 28
+          },
+          "pointing_game": {
+            "mean": 0.1673,
+            "ci_low": 0.133,
+            "ci_high": 0.2056,
+            "n": 28
+          },
+          "median_mass_in_box": 0.1615
+        }
+      },
+      "paired_differences": {
+        "trained_minus_uniform_mass": {
+          "mean": 0.1324,
+          "ci_low": 0.105,
+          "ci_high": 0.1598,
+          "n": 28,
+          "share_of_images_trained_higher": 0.9643
+        },
+        "trained_minus_random_init_mass": {
+          "mean": 0.1665,
+          "ci_low": 0.1266,
+          "ci_high": 0.207,
+          "n": 28,
+          "share_of_images_trained_higher": 0.9643
+        }
+      }
+    },
+    "PA": {
+      "n": 7,
+      "methods": {
+        "trained": {
+          "mass_in_box": {
+            "mean": 0.1449,
+            "ci_low": 0.0738,
+            "ci_high": 0.2116,
+            "n": 7
+          },
+          "pointing_game": {
+            "mean": 0.4286,
+            "ci_low": 0.1429,
+            "ci_high": 0.8571,
+            "n": 7
+          },
+          "median_mass_in_box": 0.1457
+        },
+        "random_init": {
+          "mass_in_box": {
+            "mean": 0.0551,
+            "ci_low": 0.0353,
+            "ci_high": 0.0761,
+            "n": 7
+          },
+          "pointing_game": {
+            "mean": 0.1429,
+            "ci_low": 0.0,
+            "ci_high": 0.4286,
+            "n": 7
+          },
+          "median_mass_in_box": 0.0566
+        },
+        "uniform": {
+          "mass_in_box": {
+            "mean": 0.0613,
+            "ci_low": 0.0395,
+            "ci_high": 0.0865,
+            "n": 7
+          },
+          "pointing_game": {
+            "mean": 0.0613,
+            "ci_low": 0.0395,
+            "ci_high": 0.0865,
+            "n": 7
+          },
+          "median_mass_in_box": 0.0517
+        }
+      },
+      "paired_differences": {
+        "trained_minus_uniform_mass": {
+          "mean": 0.0836,
+          "ci_low": 0.0228,
+          "ci_high": 0.1408,
+          "n": 7,
+          "share_of_images_trained_higher": 0.8571
+        },
+        "trained_minus_random_init_mass": {
+          "mean": 0.0897,
+          "ci_low": 0.0338,
+          "ci_high": 0.1426,
+          "n": 7,
+          "share_of_images_trained_higher": 0.8571
+        }
+      }
+    }
+  }
+}
