@@ -202,8 +202,10 @@ def train(
                 "seed": seed,
                 "epoch": epoch,
                 "val_auroc": val_auroc,
-                "torch_version": torch.__version__,
-                "torchvision_version": torchvision.__version__,
+                # Plain str: torch.__version__ is a TorchVersion object, which
+                # torch.load(weights_only=True) rejects without an allowlist.
+                "torch_version": str(torch.__version__),
+                "torchvision_version": str(torchvision.__version__),
                 "git_commit": git_commit(),
                 "pretrained": pretrained,
                 "smoke_test": smoke,
