@@ -1,0 +1,15 @@
+{
+  "Name": "radiology-demo",
+  "DicomAet": "ORTHANC",
+  "DicomPort": 4242,
+  "HttpPort": 8042,
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": true,
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "OverwriteInstances": false,
+  "DeidentifyLogs": true,
+  "DicomCheckCalledAet": false,
+  "StableAge": 10,
+  "HttpCompressionEnabled": true
+}

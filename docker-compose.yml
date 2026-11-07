@@ -1,0 +1,42 @@
+# Local demo stack: Orthanc (DICOM store) and Postgres (predictions, reviews, audit log).
+# Educational use only; never load real patient data.
+# Secrets come from .env (never committed); see .env.example for the variable names.
+name: radiology
+
+services:
+  orthanc:
+    # Orthanc 1.13.0, pinned by digest so the stack does not change when "latest" moves.
+    image: orthancteam/orthanc@sha256:d2705f2c56547e55ce9bc2250fd22d05d326493b3f3d9fa191ecb7db8ca6b5a2
+    ports:
+      - "127.0.0.1:4242:4242"   # DICOM
+      - "127.0.0.1:8042:8042"   # REST API and web UI
+    environment:
+      # Injected at start-up so no credential is written to a committed file.
+      ORTHANC__REGISTERED_USERS: '{"${ORTHANC_USERNAME:?set in .env}": "${ORTHANC_PASSWORD:?set in .env}"}'
+    volumes:
+      - ./deploy/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - orthanc-data:/var/lib/orthanc/db
+    restart: unless-stopped
+
+  postgres:
+    # Postgres 16, pinned by digest.
+    image: postgres@sha256:5db6dac2ef5dcff512f4f00a009c3c332b9f2f28f24277175bf3e4a3d02ef83a
+    ports:
+      # Host port from .env: 5432 is often taken by a natively installed Postgres.
+      - "127.0.0.1:${POSTGRES_PORT:?set in .env}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  orthanc-data:
+  postgres-data:
