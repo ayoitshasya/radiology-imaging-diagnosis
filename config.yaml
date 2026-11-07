@@ -57,6 +57,14 @@ classification:
     val_images: 32
     batch_size: 4
 
+demo:
+  # Sample images that fall in the FULL test split: the only ones safe for demos and
+  # Grad-CAM validation, because the full-data model never trained on them.
+  sample_manifest: data/processed/rsna_sample/manifest.csv
+  full_manifest: data/processed/full/manifest.csv
+  output: data/demo/test_studies.csv
+  report: reports/demo_test_studies.json
+
 evaluation:
   bootstrap_resamples: 1000
   ci_level: 0.95

@@ -1,0 +1,20 @@
+{
+  "sample_images": 600,
+  "in_full_test_split": 40,
+  "by_label": {
+    "1": 40
+  },
+  "by_view": {
+    "AP": 30,
+    "PA": 10
+  },
+  "by_view_and_label": {
+    "AP_label_1": 30,
+    "PA_label_1": 10
+  },
+  "by_sample_split": {
+    "train": 30,
+    "val": 6,
+    "test": 4
+  }
+}
