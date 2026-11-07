@@ -142,3 +142,22 @@ class ReviewHistory(Noticed):
     orthanc_study_id: str
     count: int
     reviews: list[ReviewOut]
+
+
+class AuditEntry(BaseModel):
+    """One audit event."""
+
+    id: int
+    event_type: str
+    study_instance_uid: str | None
+    detail: dict
+    created_at: datetime
+
+
+class AuditPage(Noticed):
+    """GET /audit: one page of events, newest first, with the total for the filters."""
+
+    total: int
+    limit: int
+    offset: int
+    items: list[AuditEntry]
