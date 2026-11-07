@@ -68,6 +68,21 @@ class OrthancClient:
         """Orthanc IDs of all stored studies."""
         return self._request("GET", "/studies").json()
 
+    def list_studies(self) -> list[dict[str, str]]:
+        """Every study as ``{"orthanc_study_id", "study_instance_uid"}``, in one request.
+
+        Uses ``?expand`` and keeps only the two identifiers the project may store;
+        patient-level tags in Orthanc's response are dropped here.
+        """
+        studies = self._request("GET", "/studies", params={"expand": ""}).json()
+        return [
+            {
+                "orthanc_study_id": s["ID"],
+                "study_instance_uid": s["MainDicomTags"]["StudyInstanceUID"],
+            }
+            for s in studies
+        ]
+
     def get_study(self, study_id: str) -> dict:
         """Study resource, including MainDicomTags and its series."""
         return self._request("GET", f"/studies/{study_id}").json()

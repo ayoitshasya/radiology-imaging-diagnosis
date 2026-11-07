@@ -25,6 +25,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from backend.app.db import Base
 
 
+class Study(Base):
+    """A study known to the backend after a sync. Status is derived, not stored."""
+
+    __tablename__ = "studies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    orthanc_study_id: Mapped[str] = mapped_column(String(64), unique=True)
+    study_instance_uid: Mapped[str] = mapped_column(String(64), unique=True)
+    synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Prediction(Base):
     """One model output for one study, with the exact model and threshold used."""
 

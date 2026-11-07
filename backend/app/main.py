@@ -9,14 +9,15 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from backend.app.db import make_engine, make_session_factory
 from backend.app.model_service import ModelService, load_model_service
-from backend.app.orthanc import OrthancClient, OrthancError
+from backend.app.orthanc import OrthancClient, OrthancError, OrthancNotFound, OrthancUnavailable
+from backend.app.routers.studies import router as studies_router
 from backend.app.settings import Settings, get_settings
 
 log = logging.getLogger(__name__)
@@ -67,6 +68,19 @@ def create_app(
         version="0.1.0",
         lifespan=lifespan,
     )
+
+    @app.exception_handler(OrthancError)
+    def orthanc_error(request: Request, exc: OrthancError) -> JSONResponse:
+        """Map Orthanc failures to 404 (not found), 503 (unreachable) or 502 (other)."""
+        if isinstance(exc, OrthancNotFound):
+            status = 404
+        elif isinstance(exc, OrthancUnavailable):
+            status = 503
+        else:
+            status = 502
+        return JSONResponse(status_code=status, content={"detail": str(exc)})
+
+    app.include_router(studies_router)
 
     @app.get("/health", tags=["health"])
     def health() -> JSONResponse:

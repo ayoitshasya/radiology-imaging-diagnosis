@@ -1,8 +1,15 @@
-"""Shared test helpers: synthetic DICOM files so tests never need real patient data."""
+"""Shared test helpers: synthetic DICOM files, a fake Orthanc and a throwaway API database.
 
+Tests never need real patient data, never touch the dev database and never reach the
+network.
+"""
+
+import re
 from pathlib import Path
 
+import httpx
 import numpy as np
+import pytest
 from pydicom.dataset import Dataset, FileMetaDataset
 from pydicom.uid import ExplicitVRLittleEndian, SecondaryCaptureImageStorage, generate_uid
 
@@ -53,3 +60,137 @@ def write_dicom(
     ds.PixelData = pixels.astype(np.uint8).tobytes()
     ds.save_as(path, enforce_file_format=True)
     return path
+
+
+# Fake Orthanc --------------------------------------------------------------------------
+
+
+class FakeOrthanc:
+    """In-memory stand-in for the Orthanc REST endpoints the backend uses."""
+
+    def __init__(self) -> None:
+        self.studies: dict[str, dict] = {}
+        self.down = False
+
+    def add_study(self, tmp_path: Path, orthanc_id: str, pixels=None, photometric="MONOCHROME2"):
+        """Store a synthetic DICOM under ``orthanc_id``; returns its StudyInstanceUID."""
+        import pydicom
+
+        if pixels is None:
+            pixels = np.random.default_rng(len(self.studies)).integers(0, 256, (256, 256))
+        path = write_dicom(tmp_path / f"{orthanc_id}.dcm", pixels, photometric=photometric)
+        uid = str(pydicom.dcmread(path).StudyInstanceUID)
+        self.studies[orthanc_id] = {"uid": uid, "dicom": path.read_bytes()}
+        return uid
+
+    def handler(self, request: httpx.Request) -> httpx.Response:
+        if self.down:
+            raise httpx.ConnectError("connection refused", request=request)
+        path = request.url.path
+        if path == "/system":
+            return httpx.Response(200, json={"Version": "fake"})
+        if path == "/studies":
+            if "expand" in request.url.params:
+                return httpx.Response(
+                    200,
+                    json=[
+                        {
+                            "ID": oid,
+                            "MainDicomTags": {"StudyInstanceUID": s["uid"]},
+                            "PatientMainDicomTags": {"PatientName": "Anonymous"},
+                        }
+                        for oid, s in self.studies.items()
+                    ],
+                )
+            return httpx.Response(200, json=list(self.studies))
+        m = re.fullmatch(r"/studies/([^/]+)(/instances)?", path)
+        if m and m.group(1) in self.studies:
+            oid = m.group(1)
+            if m.group(2):
+                return httpx.Response(200, json=[{"ID": f"inst-{oid}"}])
+            return httpx.Response(
+                200,
+                json={"ID": oid, "MainDicomTags": {"StudyInstanceUID": self.studies[oid]["uid"]}},
+            )
+        m = re.fullmatch(r"/instances/inst-([^/]+)/file", path)
+        if m and m.group(1) in self.studies:
+            return httpx.Response(200, content=self.studies[m.group(1)]["dicom"])
+        return httpx.Response(404, json={"error": "not found"})
+
+    def client(self):
+        from backend.app.orthanc import OrthancClient
+
+        return OrthancClient(
+            "http://orthanc.test", "u", "p", 2.0, transport=httpx.MockTransport(self.handler)
+        )
+
+
+# Throwaway API database ------------------------------------------------------------------
+
+API_TEST_DB = "radiology_test_api"
+
+
+@pytest.fixture
+def api_engine():
+    """A fresh database with all migrations applied, dropped after the test."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.engine import make_url
+    from sqlalchemy.exc import DBAPIError
+
+    from backend.app.settings import ROOT, get_settings
+
+    try:
+        url = make_url(get_settings().database_url.get_secret_value())
+    except Exception:  # noqa: BLE001 - no settings means the database tests cannot run
+        pytest.skip("DATABASE_URL not configured")
+    admin = create_engine(url, isolation_level="AUTOCOMMIT")
+    try:
+        with admin.connect() as conn:
+            conn.execute(text(f'DROP DATABASE IF EXISTS "{API_TEST_DB}" WITH (FORCE)'))
+            conn.execute(text(f'CREATE DATABASE "{API_TEST_DB}"'))
+    except DBAPIError:
+        pytest.skip("Postgres not reachable")
+    test_url = url.set(database=API_TEST_DB).render_as_string(hide_password=False)
+    cfg = Config(str(ROOT / "backend" / "alembic.ini"))
+    cfg.attributes["database_url"] = test_url
+    command.upgrade(cfg, "head")
+    engine = create_engine(test_url)
+    yield engine
+    engine.dispose()
+    with admin.connect() as conn:
+        conn.execute(text(f'DROP DATABASE IF EXISTS "{API_TEST_DB}" WITH (FORCE)'))
+    admin.dispose()
+
+
+@pytest.fixture(scope="session")
+def test_model_service():
+    """A randomly initialised DenseNet121 behind the real ModelService interface."""
+    import torch
+
+    from backend.app.model_service import ModelService
+    from ml.classification.common import build_model
+
+    torch.manual_seed(0)
+    return ModelService(
+        model=build_model(pretrained=False).eval(),
+        model_name="test-densenet",
+        checkpoint_sha256="b" * 64,
+        threshold=0.5,
+        device="cpu",
+        target_layer="features.denseblock4",
+    )
+
+
+@pytest.fixture
+def api(api_engine, test_model_service):
+    """(TestClient, FakeOrthanc, engine) for an app wired to the fakes."""
+    from fastapi.testclient import TestClient
+
+    from backend.app.main import create_app
+
+    fake = FakeOrthanc()
+    app = create_app(orthanc=fake.client(), engine=api_engine, model_service=test_model_service)
+    with TestClient(app) as client:
+        yield client, fake, api_engine
