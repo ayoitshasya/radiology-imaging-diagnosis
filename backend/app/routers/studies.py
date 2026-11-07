@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from backend.app.audit import record_event
 from backend.app.deps import ModelDep, OrthancDep, OverlayCacheDep, SessionDep, SettingsDep
-from backend.app.inference import load_study_image, png_bytes, predict_and_explain
+from backend.app.inference import explain, load_study_image, png_bytes, predict_and_explain
 from backend.app.models import Prediction, Study
 from backend.app.schemas import (
+    NOTICE,
     PredictionOut,
     PredictionSummary,
     StudyList,
@@ -211,3 +212,60 @@ def study_result(orthanc_study_id: str, session: SessionDep) -> PredictionOut:
     if pred is None:
         raise HTTPException(404, detail="Study not analysed yet; call POST .../analyse")
     return prediction_out(session, pred, cached=True)
+
+
+def png_response(png: bytes, extra_headers: dict[str, str] | None = None) -> Response:
+    """PNG bytes built in memory, with the notice header and caching disabled."""
+    headers = {"X-Notice": NOTICE, "Cache-Control": "no-store"} | (extra_headers or {})
+    return Response(content=png, media_type="image/png", headers=headers)
+
+
+@router.get(
+    "/{orthanc_study_id}/image",
+    response_class=Response,
+    responses={200: {"content": {"image/png": {}}}},
+)
+def study_image(
+    orthanc_study_id: str, session: SessionDep, orthanc: OrthancDep, settings: SettingsDep
+) -> Response:
+    """The preprocessed image the model sees (224x224 grayscale PNG), built in memory."""
+    study = study_or_404(session, orthanc_study_id)
+    return png_response(png_bytes(load_study_image(orthanc, study, settings.image_size)))
+
+
+@router.get(
+    "/{orthanc_study_id}/heatmap",
+    response_class=Response,
+    responses={200: {"content": {"image/png": {}}}},
+)
+def study_heatmap(
+    orthanc_study_id: str,
+    session: SessionDep,
+    orthanc: OrthancDep,
+    service: ModelDep,
+    settings: SettingsDep,
+    cache: OverlayCacheDep,
+) -> Response:
+    """Grad-CAM overlay PNG for the study's latest prediction.
+
+    Served from the in-memory cache, or recomputed after eviction or a restart. A
+    recomputed heatmap must explain the same model that made the prediction, so a
+    checkpoint mismatch is refused (409) instead of silently explaining another model.
+    """
+    study = study_or_404(session, orthanc_study_id)
+    pred = latest_prediction(session, orthanc_study_id)
+    if pred is None:
+        raise HTTPException(404, detail="Study not analysed yet; call POST .../analyse")
+    png = cache.get(pred.id)
+    source = "cache"
+    if png is None:
+        if pred.checkpoint_sha256 != service.checkpoint_sha256:
+            raise HTTPException(
+                409,
+                detail="Prediction was made with a different checkpoint; re-run analyse "
+                "with force=true",
+            )
+        png = png_bytes(explain(service, load_study_image(orthanc, study, settings.image_size)))
+        cache.put(pred.id, png)
+        source = "recomputed"
+    return png_response(png, {"X-Prediction-Id": str(pred.id), "X-Heatmap-Source": source})
