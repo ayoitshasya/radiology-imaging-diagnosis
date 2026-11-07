@@ -5,9 +5,25 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from backend.app.text import FreeText, ReviewerName
 
 NOTICE = "Educational use only. Not for clinical use."
+NO_IDENTIFIERS = (
+    "Do not type patient names, patient IDs, dates of birth or any other patient "
+    "identifier into this field."
+)
+
+
+class ReviewSummary(BaseModel):
+    """Latest review decision, shown next to a prediction."""
+
+    review_id: int
+    prediction_id: int
+    decision: Literal["approved", "rejected"]
+    reviewer: str
+    created_at: datetime
 
 
 class Noticed(BaseModel):
@@ -33,6 +49,7 @@ class StudyStatus(BaseModel):
     study_instance_uid: str
     status: Literal["not_synced", "pending", "analysed"]
     latest_prediction: PredictionSummary | None = None
+    latest_review: ReviewSummary | None = None
 
 
 class StudyList(Noticed):
@@ -64,6 +81,7 @@ class PredictionOut(Noticed):
     created_at: datetime
     cached: bool = False
     prediction_count: int = 1
+    latest_review: ReviewSummary | None = None
 
 
 class SyncResult(Noticed):
@@ -74,3 +92,53 @@ class SyncResult(Noticed):
     already_synced: int
     pending: int
     missing_from_orthanc: int
+
+
+class ReviewIn(BaseModel):
+    """A reviewer's decision on the study's latest prediction."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approved", "rejected"]
+    reviewer: ReviewerName = Field(
+        description=f"Reviewer name, max 100 characters. {NO_IDENTIFIERS}"
+    )
+    reason: FreeText | None = Field(
+        default=None,
+        description=f"Required when rejected; not used for approvals. Max 1000 characters. "
+        f"{NO_IDENTIFIERS}",
+    )
+    comment: FreeText | None = Field(
+        default=None, description=f"Optional, max 1000 characters. {NO_IDENTIFIERS}"
+    )
+
+    @model_validator(mode="after")
+    def reason_matches_decision(self) -> ReviewIn:
+        """A rejection needs a reason; an approval uses comment instead."""
+        if self.decision == "rejected" and not self.reason:
+            raise ValueError("reason is required when the decision is rejected")
+        if self.decision == "approved" and self.reason:
+            raise ValueError("reason is only for rejections; use comment for an approval")
+        return self
+
+
+class ReviewOut(Noticed):
+    """One stored review."""
+
+    review_id: int
+    prediction_id: int
+    orthanc_study_id: str
+    study_instance_uid: str
+    decision: Literal["approved", "rejected"]
+    reason: str | None
+    comment: str | None
+    reviewer: str
+    created_at: datetime
+
+
+class ReviewHistory(Noticed):
+    """GET /studies/{id}/reviews, oldest first."""
+
+    orthanc_study_id: str
+    count: int
+    reviews: list[ReviewOut]

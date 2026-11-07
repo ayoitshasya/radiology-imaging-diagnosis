@@ -71,6 +71,12 @@ class Review(Base):
             name="ck_reviews_reason_required_for_rejection",
         ),
         CheckConstraint("length(btrim(reviewer)) > 0", name="ck_reviews_reviewer"),
+        CheckConstraint(
+            "reason IS NULL OR length(reason) <= 1000", name="ck_reviews_reason_length"
+        ),
+        CheckConstraint(
+            "comment IS NULL OR length(comment) <= 1000", name="ck_reviews_comment_length"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -79,6 +85,7 @@ class Review(Base):
     )
     decision: Mapped[str] = mapped_column(String(16))
     reason: Mapped[str | None] = mapped_column(Text)
+    comment: Mapped[str | None] = mapped_column(Text)
     reviewer: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

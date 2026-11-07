@@ -18,6 +18,7 @@ from backend.app.db import make_engine, make_session_factory
 from backend.app.inference import OverlayCache
 from backend.app.model_service import ModelService, load_model_service
 from backend.app.orthanc import OrthancClient, OrthancError, OrthancNotFound, OrthancUnavailable
+from backend.app.routers.reviews import router as reviews_router
 from backend.app.routers.studies import router as studies_router
 from backend.app.settings import Settings, get_settings
 
@@ -83,6 +84,7 @@ def create_app(
         return JSONResponse(status_code=status, content={"detail": str(exc)})
 
     app.include_router(studies_router)
+    app.include_router(reviews_router)
 
     @app.get("/health", tags=["health"])
     def health() -> JSONResponse:

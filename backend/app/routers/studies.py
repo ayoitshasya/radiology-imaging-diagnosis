@@ -13,6 +13,13 @@ from backend.app.audit import record_event
 from backend.app.deps import ModelDep, OrthancDep, OverlayCacheDep, SessionDep, SettingsDep
 from backend.app.inference import explain, load_study_image, png_bytes, predict_and_explain
 from backend.app.models import Prediction, Study
+from backend.app.queries import (
+    latest_prediction,
+    latest_predictions,
+    latest_reviews,
+    review_summary,
+    study_or_404,
+)
 from backend.app.schemas import (
     NOTICE,
     PredictionOut,
@@ -25,22 +32,12 @@ from backend.app.schemas import (
 router = APIRouter(prefix="/studies", tags=["studies"])
 
 
-def latest_predictions(session: Session) -> dict[str, Prediction]:
-    """Latest prediction per Orthanc study ID."""
-    newest = (
-        select(Prediction.orthanc_study_id, func.max(Prediction.id).label("max_id"))
-        .group_by(Prediction.orthanc_study_id)
-        .subquery()
-    )
-    rows = session.scalars(select(Prediction).join(newest, Prediction.id == newest.c.max_id))
-    return {p.orthanc_study_id: p for p in rows}
-
-
 @router.get("", response_model=StudyList)
 def list_studies(session: SessionDep, orthanc: OrthancDep) -> StudyList:
     """List every study in Orthanc with its status: not_synced, pending or analysed."""
     synced = set(session.scalars(select(Study.orthanc_study_id)))
     latest = latest_predictions(session)
+    reviews = latest_reviews(session, [p.id for p in latest.values()])
     studies = []
     for s in orthanc.list_studies():
         oid = s["orthanc_study_id"]
@@ -59,6 +56,7 @@ def list_studies(session: SessionDep, orthanc: OrthancDep) -> StudyList:
                 )
                 if pred
                 else None,
+                latest_review=review_summary(reviews.get(pred.id)) if pred else None,
             )
         )
     return StudyList(count=len(studies), studies=studies)
@@ -103,24 +101,6 @@ def sync_studies(session: SessionDep, orthanc: OrthancDep) -> SyncResult:
     )
 
 
-def study_or_404(session: Session, orthanc_study_id: str) -> Study:
-    """The synced study, or 404 telling the caller to sync first."""
-    study = session.scalar(select(Study).where(Study.orthanc_study_id == orthanc_study_id))
-    if study is None:
-        raise HTTPException(404, detail="Unknown study; call POST /studies/sync first")
-    return study
-
-
-def latest_prediction(session: Session, orthanc_study_id: str) -> Prediction | None:
-    """Most recent prediction for a study, if any."""
-    return session.scalar(
-        select(Prediction)
-        .where(Prediction.orthanc_study_id == orthanc_study_id)
-        .order_by(Prediction.id.desc())
-        .limit(1)
-    )
-
-
 def prediction_out(session: Session, pred: Prediction, cached: bool) -> PredictionOut:
     """Response model for a stored prediction."""
     count = session.scalar(
@@ -140,6 +120,7 @@ def prediction_out(session: Session, pred: Prediction, cached: bool) -> Predicti
         created_at=pred.created_at,
         cached=cached,
         prediction_count=count,
+        latest_review=review_summary(latest_reviews(session, [pred.id]).get(pred.id)),
     )
 
 
