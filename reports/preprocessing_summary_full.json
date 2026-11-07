@@ -1,0 +1,66 @@
+{
+  "seed": 42,
+  "size": 224,
+  "images": 26684,
+  "skipped_existing": 0,
+  "unlabeled": 0,
+  "splits": {
+    "train": {
+      "images": 18678,
+      "patients": 18678,
+      "positive": 4208,
+      "negative": 14470,
+      "positive_rate": 0.2253,
+      "views": {
+        "AP": {
+          "images": 8533,
+          "positive": 3261,
+          "positive_rate": 0.3822
+        },
+        "PA": {
+          "images": 10145,
+          "positive": 947,
+          "positive_rate": 0.0933
+        }
+      }
+    },
+    "val": {
+      "images": 4003,
+      "patients": 4003,
+      "positive": 902,
+      "negative": 3101,
+      "positive_rate": 0.2253,
+      "views": {
+        "AP": {
+          "images": 1807,
+          "positive": 693,
+          "positive_rate": 0.3835
+        },
+        "PA": {
+          "images": 2196,
+          "positive": 209,
+          "positive_rate": 0.0952
+        }
+      }
+    },
+    "test": {
+      "images": 4003,
+      "patients": 4003,
+      "positive": 902,
+      "negative": 3101,
+      "positive_rate": 0.2253,
+      "views": {
+        "AP": {
+          "images": 1833,
+          "positive": 710,
+          "positive_rate": 0.3873
+        },
+        "PA": {
+          "images": 2170,
+          "positive": 192,
+          "positive_rate": 0.0885
+        }
+      }
+    }
+  }
+}

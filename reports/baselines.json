@@ -1,0 +1,33 @@
+{
+  "seed": 42,
+  "bootstrap": {
+    "resamples": 1000,
+    "ci_level": 0.95
+  },
+  "test_n": 4003,
+  "test_prevalence": 0.2253,
+  "view_only": {
+    "description": "score = train-split positive rate of the image's view position",
+    "train_positive_rate_by_view": {
+      "AP": 0.3822,
+      "PA": 0.0933
+    },
+    "test": {
+      "auroc": {
+        "value": 0.7125,
+        "ci_low": 0.6959,
+        "ci_high": 0.7273,
+        "n_valid": 1000
+      }
+    }
+  },
+  "majority_class": {
+    "description": "predict the train split's majority class for every image",
+    "predicted_class": 0,
+    "test_auroc": 0.5,
+    "test_accuracy": 0.7747,
+    "test_sensitivity": 0.0,
+    "test_specificity": 1.0,
+    "note": "accuracy shown only to illustrate why it misleads; see evaluate.py"
+  }
+}

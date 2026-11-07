@@ -29,7 +29,11 @@ frontend/dist/
 !/data/**/
 !/data/**/.gitkeep
 !/data/**/*.dvc
-/models/
+# Weights stay out of git; only their DVC pointer files are tracked
+/models/*
+!/models/*.dvc
+# Archives such as downloaded Kaggle results bundles
+*.zip
 # Smoke-test outputs are pipeline checks, never results
 /reports/smoke/
 *.pt

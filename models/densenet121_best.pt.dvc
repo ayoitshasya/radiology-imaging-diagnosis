@@ -1,0 +1,5 @@
+outs:
+- md5: 4f972ef9c23eb02106873514cdd1de6c
+  size: 28433494
+  hash: md5
+  path: densenet121_best.pt
