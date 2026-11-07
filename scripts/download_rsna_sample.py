@@ -8,12 +8,18 @@ Requires the label CSVs to already be in the sample directory and the
 KAGGLE_API_TOKEN environment variable to be set. Patient IDs are written
 to the manifest only; they are never printed.
 
+With ``--ids-file``, sampling is skipped and only the patient IDs listed in that CSV
+(column ``patientId``) are downloaded into ``--output-dir``; the sample manifest and the
+existing sample folder are not touched.
+
 Usage:
     python scripts/download_rsna_sample.py
+    python scripts/download_rsna_sample.py --ids-file <csv> [--output-dir <dir>]
 """
 
 from __future__ import annotations
 
+import argparse
 import shutil
 import sys
 import time
@@ -125,49 +131,73 @@ def dir_size_mb(path: Path) -> float:
     return sum(f.stat().st_size for f in path.rglob("*") if f.is_file()) / 1e6
 
 
-def main() -> int:
-    cfg = load_config()
-    rs = cfg["rsna_sample"]
-    seed = cfg["project"]["seed"]
-    sample_dir = ROOT / rs["dir"]
-    images_dir = sample_dir / rs["images_subdir"]
+def download_ids(ids: list[str], out_dir: Path, rs: dict) -> tuple[int, list[int]]:
+    """Download ``<id>.dcm`` for each patient ID into ``out_dir/<images_subdir>``.
 
-    free_gb = shutil.disk_usage(sample_dir).free / 1e9
-    print(f"Free disk: {free_gb:.1f} GB (minimum {rs['min_free_gb']} GB)")
-    if free_gb < rs["min_free_gb"]:
-        print("Not enough free disk space; aborting.")
-        return 1
+    Files already present and fully decodable are skipped. Failures are reported by row
+    number in ``ids``, never by ID.
 
-    labels = pd.read_csv(sample_dir / rs["labels_csv"])
-    class_info = pd.read_csv(sample_dir / rs["class_info_csv"]).drop_duplicates("patientId")
-    sample = stratified_sample(one_row_per_patient(labels), rs["per_class"], seed)
-    sample = sample.merge(class_info, on="patientId", how="left")
-    sample.to_csv(sample_dir / "sample_manifest.csv", index=False)
-    print(
-        f"seed={seed}; sampled {len(sample)} patients "
-        f"({(sample.Target == 1).sum()} positive, {(sample.Target == 0).sum()} negative)"
-    )
-
+    Returns:
+        (number skipped as already present, row numbers that failed).
+    """
     # Imported here because the kaggle package authenticates on import.
     from kaggle.api.kaggle_api_extended import KaggleApi
 
     api = KaggleApi()
     api.authenticate()
-
+    images_dir = out_dir / rs["images_subdir"]
     skipped, failed_rows = 0, []
-    for row, pid in enumerate(tqdm(sample["patientId"], desc="DICOMs", unit="file")):
+    for row, pid in enumerate(tqdm(ids, desc="DICOMs", unit="file")):
         target = images_dir / f"{pid}.dcm"
         if is_valid_dicom(target):
             skipped += 1
             continue
         remote = f"{rs['images_subdir']}/{pid}.dcm"
-        if not download_one(api, rs["competition"], remote, sample_dir, target, rs["max_retries"]):
+        if not download_one(api, rs["competition"], remote, out_dir, target, rs["max_retries"]):
             failed_rows.append(row)
+    return skipped, failed_rows
 
-    n_files = sum(1 for _ in images_dir.glob("*.dcm"))
+
+def main(argv: list[str] | None = None) -> int:
+    """Download the seeded 600-patient sample, or only the IDs listed in --ids-file."""
+    p = argparse.ArgumentParser(description="Download RSNA DICOMs from Kaggle.")
+    p.add_argument("--ids-file", type=Path, help="CSV with a patientId column; skips sampling")
+    p.add_argument("--output-dir", type=Path, help="with --ids-file (default: its folder)")
+    args = p.parse_args(argv)
+
+    cfg = load_config()
+    rs = cfg["rsna_sample"]
+    seed = cfg["project"]["seed"]
+    sample_dir = ROOT / rs["dir"]
+    out_dir = (args.output_dir or args.ids_file.parent) if args.ids_file else sample_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    free_gb = shutil.disk_usage(out_dir).free / 1e9
+    print(f"Free disk: {free_gb:.1f} GB (minimum {rs['min_free_gb']} GB)")
+    if free_gb < rs["min_free_gb"]:
+        print("Not enough free disk space; aborting.")
+        return 1
+
+    if args.ids_file:
+        ids = pd.read_csv(args.ids_file)["patientId"].astype(str).tolist()
+        print(f"downloading {len(ids)} listed patients (no sampling, manifest untouched)")
+    else:
+        labels = pd.read_csv(sample_dir / rs["labels_csv"])
+        class_info = pd.read_csv(sample_dir / rs["class_info_csv"]).drop_duplicates("patientId")
+        sample = stratified_sample(one_row_per_patient(labels), rs["per_class"], seed)
+        sample = sample.merge(class_info, on="patientId", how="left")
+        sample.to_csv(sample_dir / "sample_manifest.csv", index=False)
+        print(
+            f"seed={seed}; sampled {len(sample)} patients "
+            f"({(sample.Target == 1).sum()} positive, {(sample.Target == 0).sum()} negative)"
+        )
+        ids = sample["patientId"].tolist()
+
+    skipped, failed_rows = download_ids(ids, out_dir, rs)
+    n_files = sum(1 for _ in (out_dir / rs["images_subdir"]).glob("*.dcm"))
     print(f"Skipped (already present): {skipped}")
-    print(f"Failed: {len(failed_rows)} (manifest rows: {failed_rows})")
-    print(f"DICOMs on disk: {n_files}; sample folder size: {dir_size_mb(sample_dir):.1f} MB")
+    print(f"Failed: {len(failed_rows)} (rows: {failed_rows})")
+    print(f"DICOMs on disk: {n_files}; folder size: {dir_size_mb(out_dir):.1f} MB")
     return 1 if failed_rows else 0
 
 

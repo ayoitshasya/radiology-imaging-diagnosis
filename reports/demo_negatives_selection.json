@@ -1,0 +1,15 @@
+{
+  "split_seed": 42,
+  "demo_seed": 7,
+  "candidates": 3101,
+  "candidates_tried": 60,
+  "downloaded": 60,
+  "discarded_view_quota_full": 20,
+  "failed_download": 0,
+  "accepted_by_view": {
+    "AP": 20,
+    "PA": 20
+  },
+  "accepted_total": 40,
+  "all_verified_full_test_negatives": true
+}

@@ -1,0 +1,6 @@
+outs:
+- md5: 381a4bc99b1c3720e6d02399d3a23684.dir
+  size: 5227944
+  nfiles: 41
+  hash: md5
+  path: rsna_demo_negatives

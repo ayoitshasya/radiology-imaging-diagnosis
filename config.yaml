@@ -60,10 +60,23 @@ classification:
 demo:
   # Sample images that fall in the FULL test split: the only ones safe for demos and
   # Grad-CAM validation, because the full-data model never trained on them.
-  sample_manifest: data/processed/rsna_sample/manifest.csv
+  sample_manifests:
+    - data/processed/rsna_sample/manifest.csv
+    - data/processed/demo_negatives/manifest.csv
   full_manifest: data/processed/full/manifest.csv
   output: data/demo/test_studies.csv
   report: reports/demo_test_studies.json
+
+demo_negatives:
+  # Negatives from the FULL test split, added because seed 42 sent every sampled negative
+  # to the full train split. A different seed avoids reusing the split's random draw.
+  seed: 7
+  per_view: 20          # 20 AP + 20 PA
+  batch_size: 10        # downloads per round; view is only known after download
+  dir: data/raw/rsna_demo_negatives
+  ids_file: demo_negatives.csv
+  processed: data/processed/demo_negatives
+  report: reports/demo_negatives_selection.json
 
 evaluation:
   bootstrap_resamples: 1000
