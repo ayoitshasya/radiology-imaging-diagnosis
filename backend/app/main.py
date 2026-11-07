@@ -15,6 +15,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from backend.app.db import make_engine, make_session_factory
+from backend.app.inference import OverlayCache
 from backend.app.model_service import ModelService, load_model_service
 from backend.app.orthanc import OrthancClient, OrthancError, OrthancNotFound, OrthancUnavailable
 from backend.app.routers.studies import router as studies_router
@@ -49,6 +50,7 @@ def create_app(
         )
         app.state.engine = engine or make_engine(cfg.database_url.get_secret_value())
         app.state.session_factory = make_session_factory(app.state.engine)
+        app.state.overlay_cache = OverlayCache()
         app.state.model_service, app.state.model_error = model_service, None
         if model_service is None:
             try:

@@ -9,6 +9,7 @@ from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from backend.app.db import session_scope
+from backend.app.inference import OverlayCache
 from backend.app.model_service import ModelService
 from backend.app.orthanc import OrthancClient
 from backend.app.settings import Settings
@@ -37,7 +38,13 @@ def get_model(request: Request) -> ModelService:
     return service
 
 
+def get_overlay_cache(request: Request) -> OverlayCache:
+    """The in-memory Grad-CAM overlay cache."""
+    return request.app.state.overlay_cache
+
+
 # Annotated aliases, FastAPI's recommended form for declaring dependencies once.
+OverlayCacheDep = Annotated[OverlayCache, Depends(get_overlay_cache)]
 SessionDep = Annotated[Session, Depends(get_session)]
 OrthancDep = Annotated[OrthancClient, Depends(get_orthanc)]
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]

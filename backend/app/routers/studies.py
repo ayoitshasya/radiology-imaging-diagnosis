@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from backend.app.audit import record_event
-from backend.app.deps import OrthancDep, SessionDep
+from backend.app.deps import ModelDep, OrthancDep, OverlayCacheDep, SessionDep, SettingsDep
+from backend.app.inference import load_study_image, png_bytes, predict_and_explain
 from backend.app.models import Prediction, Study
-from backend.app.schemas import PredictionSummary, StudyList, StudyStatus, SyncResult
+from backend.app.schemas import (
+    PredictionOut,
+    PredictionSummary,
+    StudyList,
+    StudyStatus,
+    SyncResult,
+)
 
 router = APIRouter(prefix="/studies", tags=["studies"])
 
@@ -91,3 +100,114 @@ def sync_studies(session: SessionDep, orthanc: OrthancDep) -> SyncResult:
         pending=len((all_known & orthanc_ids) - analysed),
         missing_from_orthanc=len(all_known - orthanc_ids),
     )
+
+
+def study_or_404(session: Session, orthanc_study_id: str) -> Study:
+    """The synced study, or 404 telling the caller to sync first."""
+    study = session.scalar(select(Study).where(Study.orthanc_study_id == orthanc_study_id))
+    if study is None:
+        raise HTTPException(404, detail="Unknown study; call POST /studies/sync first")
+    return study
+
+
+def latest_prediction(session: Session, orthanc_study_id: str) -> Prediction | None:
+    """Most recent prediction for a study, if any."""
+    return session.scalar(
+        select(Prediction)
+        .where(Prediction.orthanc_study_id == orthanc_study_id)
+        .order_by(Prediction.id.desc())
+        .limit(1)
+    )
+
+
+def prediction_out(session: Session, pred: Prediction, cached: bool) -> PredictionOut:
+    """Response model for a stored prediction."""
+    count = session.scalar(
+        select(func.count(Prediction.id)).where(
+            Prediction.orthanc_study_id == pred.orthanc_study_id
+        )
+    )
+    return PredictionOut(
+        prediction_id=pred.id,
+        orthanc_study_id=pred.orthanc_study_id,
+        study_instance_uid=pred.study_instance_uid,
+        probability=pred.probability,
+        label=pred.label,
+        threshold=pred.threshold,
+        model_name=pred.model_name,
+        checkpoint_sha256=pred.checkpoint_sha256,
+        created_at=pred.created_at,
+        cached=cached,
+        prediction_count=count,
+    )
+
+
+@router.post("/{orthanc_study_id}/analyse", response_model=PredictionOut)
+def analyse_study(
+    orthanc_study_id: str,
+    session: SessionDep,
+    orthanc: OrthancDep,
+    service: ModelDep,
+    settings: SettingsDep,
+    cache: OverlayCacheDep,
+    force: Annotated[bool, Query(description="Re-run even if a prediction exists")] = False,
+) -> PredictionOut:
+    """Run the model and Grad-CAM on a synced study and store the prediction.
+
+    Idempotent: if the study already has a prediction and force is false, the stored
+    result is returned (cached=true). An audit event is written either way. With force,
+    a new prediction row is added; earlier rows are never changed.
+    """
+    study = study_or_404(session, orthanc_study_id)
+    existing = latest_prediction(session, orthanc_study_id)
+    if existing is not None and not force:
+        record_event(
+            session,
+            "analysis_returned_cached",
+            study.study_instance_uid,
+            {"orthanc_study_id": orthanc_study_id, "prediction_id": existing.id},
+        )
+        session.commit()
+        return prediction_out(session, existing, cached=True)
+
+    img = load_study_image(orthanc, study, settings.image_size)
+    probability, overlay_rgb = predict_and_explain(service, img)
+    pred = Prediction(
+        orthanc_study_id=orthanc_study_id,
+        study_instance_uid=study.study_instance_uid,
+        probability=probability,
+        label=int(probability >= service.threshold),
+        threshold=service.threshold,
+        model_name=service.model_name,
+        checkpoint_sha256=service.checkpoint_sha256,
+    )
+    session.add(pred)
+    session.flush()
+    record_event(
+        session,
+        "analysis_completed",
+        study.study_instance_uid,
+        {
+            "orthanc_study_id": orthanc_study_id,
+            "prediction_id": pred.id,
+            "probability": probability,
+            "label": pred.label,
+            "threshold": service.threshold,
+            "model_name": service.model_name,
+            "checkpoint_sha256": service.checkpoint_sha256,
+            "forced": force,
+        },
+    )
+    session.commit()
+    cache.put(pred.id, png_bytes(overlay_rgb))
+    return prediction_out(session, pred, cached=False)
+
+
+@router.get("/{orthanc_study_id}/result", response_model=PredictionOut)
+def study_result(orthanc_study_id: str, session: SessionDep) -> PredictionOut:
+    """The latest stored prediction for a study; 404 if the study is unknown or unanalysed."""
+    study_or_404(session, orthanc_study_id)
+    pred = latest_prediction(session, orthanc_study_id)
+    if pred is None:
+        raise HTTPException(404, detail="Study not analysed yet; call POST .../analyse")
+    return prediction_out(session, pred, cached=True)

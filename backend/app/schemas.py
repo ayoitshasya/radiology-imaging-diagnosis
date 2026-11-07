@@ -42,6 +42,30 @@ class StudyList(Noticed):
     studies: list[StudyStatus]
 
 
+LABEL_MEANING = (
+    "1 = model score at or above the validation-chosen threshold (pneumonia opacity "
+    "predicted); 0 = below it. A model output, not a diagnosis."
+)
+
+
+class PredictionOut(Noticed):
+    """A stored prediction with everything needed to interpret and trace it."""
+
+    prediction_id: int
+    orthanc_study_id: str
+    study_instance_uid: str
+    probability: float
+    label: int
+    label_meaning: str = Field(default=LABEL_MEANING)
+    threshold: float
+    threshold_source: str = Field(default="validation split, Youden J")
+    model_name: str
+    checkpoint_sha256: str
+    created_at: datetime
+    cached: bool = False
+    prediction_count: int = 1
+
+
 class SyncResult(Noticed):
     """POST /studies/sync."""
 

@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     notice: str = ""
     device: str = "cpu"
     target_layer: str = ""
+    image_size: int = 224
 
 
 def load_project_config(path: Path = ROOT / "config.yaml") -> dict:
@@ -51,6 +52,7 @@ def load_project_config(path: Path = ROOT / "config.yaml") -> dict:
         "notice": b["notice"],
         "device": cfg["device"],
         "target_layer": cfg["explainability"]["target_layer"],
+        "image_size": cfg["preprocess"]["size"],
     }
 
 
