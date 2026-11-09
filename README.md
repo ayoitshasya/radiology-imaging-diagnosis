@@ -158,6 +158,8 @@ recorded there predates the viewer and container work).
 
 ## Documentation
 
+- [docs/architecture.md](docs/architecture.md): system and sequence diagrams,
+  components and design decisions.
 - [frontend/README.md](frontend/README.md): running and developing the React viewer.
 - [docs/api.md](docs/api.md): every API endpoint with real request and response
   examples; [docs/openapi.json](docs/openapi.json) is the exported schema.
