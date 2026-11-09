@@ -1,0 +1,12 @@
+# Build context for frontend/Dockerfile (context = frontend/).
+# Dependencies are installed fresh by npm ci; local builds, env files and the Dockerfile
+# itself are never sent. .env.local is excluded so the build argument, not a developer's
+# local file, decides VITE_API_BASE_URL.
+node_modules
+dist
+coverage
+.env
+.env.*
+*.local
+Dockerfile
+.dockerignore
