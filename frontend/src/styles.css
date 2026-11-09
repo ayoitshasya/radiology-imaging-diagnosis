@@ -250,6 +250,129 @@ th {
   background: var(--surface);
 }
 
+.study-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 52rem) {
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.panel {
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.scan {
+  margin: 0;
+}
+
+/* Scan and overlay share one square frame, so the overlay lines up pixel for pixel. */
+.scan-stack {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  aspect-ratio: 1 / 1;
+  background: #000;
+}
+
+.scan-stack img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.scan figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.prob {
+  margin: 0.5rem 0 1.5rem;
+}
+
+.prob-track {
+  position: relative;
+  height: 1.25rem;
+  background: var(--neutral-bg);
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+}
+
+.prob-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.prob-marker {
+  position: absolute;
+  top: -0.35rem;
+  bottom: -0.35rem;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--text);
+}
+
+.prob-scale {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--muted);
+  height: 1.3rem;
+}
+
+.prob-marker-label {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.prob-value {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.facts dt {
+  font-weight: 600;
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .muted {
   color: var(--muted);
 }
