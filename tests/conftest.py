@@ -71,6 +71,8 @@ class FakeOrthanc:
     def __init__(self) -> None:
         self.studies: dict[str, dict] = {}
         self.down = False
+        self.requests: list[str] = []  # every path asked for, to prove what was contacted
+        self.file_status: dict[str, int] = {}  # study ID -> HTTP status for its file
 
     def add_study(self, tmp_path: Path, orthanc_id: str, pixels=None, photometric="MONOCHROME2"):
         """Store a synthetic DICOM under ``orthanc_id``; returns its StudyInstanceUID."""
@@ -84,6 +86,7 @@ class FakeOrthanc:
         return uid
 
     def handler(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request.url.path)
         if self.down:
             raise httpx.ConnectError("connection refused", request=request)
         path = request.url.path
@@ -114,6 +117,9 @@ class FakeOrthanc:
             )
         m = re.fullmatch(r"/instances/inst-([^/]+)/file", path)
         if m and m.group(1) in self.studies:
+            status = self.file_status.get(m.group(1), 200)
+            if status != 200:
+                return httpx.Response(status, json={"error": "injected"})
             return httpx.Response(200, content=self.studies[m.group(1)]["dicom"])
         return httpx.Response(404, json={"error": "not found"})
 
