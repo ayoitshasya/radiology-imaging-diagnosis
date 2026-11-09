@@ -6,6 +6,8 @@ import { StatusBadge } from '../components/Badges'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { OverlayCaption, OverlayControls, OverlayLayer, useHeatmap } from '../components/GradCam'
 import { ResultPanel } from '../components/ResultPanel'
+import { ReviewForm } from '../components/ReviewForm'
+import { ReviewHistoryList } from '../components/ReviewHistory'
 import { ScanViewer } from '../components/ScanViewer'
 import { ShortUid, shortUid } from '../components/ShortUid'
 import { useApiData } from '../hooks/useApiData'
@@ -87,6 +89,7 @@ function SyncedStudy({ study }: { study: StudyStatus }) {
   const [overlayOn, setOverlayOn] = useState(false)
   const [overlayRequested, setOverlayRequested] = useState(false)
   const [opacity, setOpacity] = useState(50)
+  const [historyKey, setHistoryKey] = useState(0)
   const heatmap = useHeatmap(id, result?.prediction_id ?? -1, overlayRequested && result !== null)
   const heatmapUrl = useObjectUrl(heatmap.state.status === 'ok' ? heatmap.state.data : null)
   const short = shortUid(study.study_instance_uid)
@@ -140,7 +143,15 @@ function SyncedStudy({ study }: { study: StudyStatus }) {
           ) : stored.state.status === 'error' ? (
             <ErrorMessage error={stored.state.error} onRetry={stored.reload} />
           ) : result ? (
-            <ResultPanel result={result} justAnalysed={fresh !== null} />
+            <div className="stack">
+              <ResultPanel result={result} justAnalysed={fresh !== null} />
+              <ReviewForm
+                orthancStudyId={id}
+                predictionId={result.prediction_id}
+                onSubmitted={() => setHistoryKey((k) => k + 1)}
+              />
+              <ReviewHistoryList orthancStudyId={id} refreshKey={historyKey} />
+            </div>
           ) : (
             <section className="panel" aria-labelledby="analyse-heading" aria-busy={analysing}>
               <h2 id="analyse-heading">Not analysed yet</h2>
