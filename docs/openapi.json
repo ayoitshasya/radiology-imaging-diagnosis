@@ -1,0 +1,1080 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Radiology imaging diagnosis API",
+    "description": "Educational use only. Not for clinical use.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/studies": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "List Studies",
+        "description": "List every study in Orthanc with its status: not_synced, pending or analysed.",
+        "operationId": "list_studies_studies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudyList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/sync": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Sync Studies",
+        "description": "Register Orthanc studies the database does not know yet; they start as pending.\n\nList-and-diff rather than Orthanc's changes feed: one request lists all studies, the\ndiff is stateless and idempotent, and no cursor has to be stored. The cost is linear\nin the number of studies, which is fine at demo scale. ON CONFLICT DO NOTHING keeps\nconcurrent syncs from creating duplicates. Studies gone from Orthanc are counted,\nnever deleted.",
+        "operationId": "sync_studies_studies_sync_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/analyse": {
+      "post": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Analyse Study",
+        "description": "Run the model and Grad-CAM on a synced study and store the prediction.\n\nIdempotent: if the study already has a prediction and force is false, the stored\nresult is returned (cached=true). An audit event is written either way. With force,\na new prediction row is added; earlier rows are never changed.",
+        "operationId": "analyse_study_studies__orthanc_study_id__analyse_post",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          },
+          {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Re-run even if a prediction exists",
+              "default": false,
+              "title": "Force"
+            },
+            "description": "Re-run even if a prediction exists"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/result": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Study Result",
+        "description": "The latest stored prediction for a study; 404 if the study is unknown or unanalysed.",
+        "operationId": "study_result_studies__orthanc_study_id__result_get",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/image": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Study Image",
+        "description": "The preprocessed image the model sees (224x224 grayscale PNG), built in memory.",
+        "operationId": "study_image_studies__orthanc_study_id__image_get",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/heatmap": {
+      "get": {
+        "tags": [
+          "studies"
+        ],
+        "summary": "Study Heatmap",
+        "description": "Grad-CAM overlay PNG for the study's latest prediction.\n\nServed from the in-memory cache, or recomputed after eviction or a restart. A\nrecomputed heatmap must explain the same model that made the prediction, so a\ncheckpoint mismatch is refused (409) instead of silently explaining another model.",
+        "operationId": "study_heatmap_studies__orthanc_study_id__heatmap_get",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "image/png": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/review": {
+      "post": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Review Study",
+        "description": "Record approved or rejected for the study's latest prediction. A reason is required for a rejection. Each call adds a new review; none is edited. Do not type patient names, patient IDs, dates of birth or any other patient identifier into this field.",
+        "operationId": "review_study_studies__orthanc_study_id__review_post",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/studies/{orthanc_study_id}/reviews": {
+      "get": {
+        "tags": [
+          "reviews"
+        ],
+        "summary": "Study Reviews",
+        "description": "Every review of the study's predictions, oldest first; empty if none yet.",
+        "operationId": "study_reviews_studies__orthanc_study_id__reviews_get",
+        "parameters": [
+          {
+            "name": "orthanc_study_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]{1,64}$",
+              "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+              "title": "Orthanc Study Id"
+            },
+            "description": "Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewHistory"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audit": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List Audit",
+        "description": "Audit events filtered by study, type and time range; newest first, paginated.\n\nOrdered by created_at then id, so events with the same timestamp keep a stable order\nacross pages. ``total`` counts all events matching the filters.",
+        "operationId": "list_audit_audit_get",
+        "parameters": [
+          {
+            "name": "study_instance_uid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64,
+                  "pattern": "^[0-9.]+$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "DICOM StudyInstanceUID",
+              "title": "Study Instance Uid"
+            },
+            "description": "DICOM StudyInstanceUID"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "study_synced",
+                    "analysis_completed",
+                    "analysis_returned_cached",
+                    "review_submitted"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Type"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 8601; inclusive; UTC if no timezone",
+              "title": "Since"
+            },
+            "description": "ISO 8601; inclusive; UTC if no timezone"
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ISO 8601; exclusive; UTC if no timezone",
+              "title": "Until"
+            },
+            "description": "ISO 8601; exclusive; UTC if no timezone"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health",
+        "description": "Report whether Orthanc, the database and the model are usable (200) or not (503).",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditEntry": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "study_instance_uid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Instance Uid"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "study_instance_uid",
+          "detail",
+          "created_at"
+        ],
+        "title": "AuditEntry",
+        "description": "One audit event."
+      },
+      "AuditPage": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "limit",
+          "offset",
+          "items"
+        ],
+        "title": "AuditPage",
+        "description": "GET /audit: one page of events, newest first, with the total for the filters."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PredictionOut": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "prediction_id": {
+            "type": "integer",
+            "title": "Prediction Id"
+          },
+          "orthanc_study_id": {
+            "type": "string",
+            "title": "Orthanc Study Id"
+          },
+          "study_instance_uid": {
+            "type": "string",
+            "title": "Study Instance Uid"
+          },
+          "probability": {
+            "type": "number",
+            "title": "Probability"
+          },
+          "label": {
+            "type": "integer",
+            "title": "Label"
+          },
+          "label_meaning": {
+            "type": "string",
+            "title": "Label Meaning",
+            "default": "1 = model score at or above the validation-chosen threshold (pneumonia opacity predicted); 0 = below it. A model output, not a diagnosis."
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "threshold_source": {
+            "type": "string",
+            "title": "Threshold Source",
+            "default": "validation split, Youden J"
+          },
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "checkpoint_sha256": {
+            "type": "string",
+            "title": "Checkpoint Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          },
+          "prediction_count": {
+            "type": "integer",
+            "title": "Prediction Count",
+            "default": 1
+          },
+          "latest_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "prediction_id",
+          "orthanc_study_id",
+          "study_instance_uid",
+          "probability",
+          "label",
+          "threshold",
+          "model_name",
+          "checkpoint_sha256",
+          "created_at"
+        ],
+        "title": "PredictionOut",
+        "description": "A stored prediction with everything needed to interpret and trace it."
+      },
+      "PredictionSummary": {
+        "properties": {
+          "prediction_id": {
+            "type": "integer",
+            "title": "Prediction Id"
+          },
+          "probability": {
+            "type": "number",
+            "title": "Probability"
+          },
+          "label": {
+            "type": "integer",
+            "title": "Label"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prediction_id",
+          "probability",
+          "label",
+          "threshold",
+          "created_at"
+        ],
+        "title": "PredictionSummary",
+        "description": "Short form of a prediction for study listings."
+      },
+      "ReviewHistory": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "orthanc_study_id": {
+            "type": "string",
+            "title": "Orthanc Study Id"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "reviews": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewOut"
+            },
+            "type": "array",
+            "title": "Reviews"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orthanc_study_id",
+          "count",
+          "reviews"
+        ],
+        "title": "ReviewHistory",
+        "description": "GET /studies/{id}/reviews, oldest first."
+      },
+      "ReviewIn": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "reviewer": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Reviewer",
+            "description": "Reviewer name, max 100 characters. Do not type patient names, patient IDs, dates of birth or any other patient identifier into this field."
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "Required when rejected; not used for approvals. Max 1000 characters. Do not type patient names, patient IDs, dates of birth or any other patient identifier into this field."
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment",
+            "description": "Optional, max 1000 characters. Do not type patient names, patient IDs, dates of birth or any other patient identifier into this field."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision",
+          "reviewer"
+        ],
+        "title": "ReviewIn",
+        "description": "A reviewer's decision on the study's latest prediction."
+      },
+      "ReviewOut": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "review_id": {
+            "type": "integer",
+            "title": "Review Id"
+          },
+          "prediction_id": {
+            "type": "integer",
+            "title": "Prediction Id"
+          },
+          "orthanc_study_id": {
+            "type": "string",
+            "title": "Orthanc Study Id"
+          },
+          "study_instance_uid": {
+            "type": "string",
+            "title": "Study Instance Uid"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "reviewer": {
+            "type": "string",
+            "title": "Reviewer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "review_id",
+          "prediction_id",
+          "orthanc_study_id",
+          "study_instance_uid",
+          "decision",
+          "reason",
+          "comment",
+          "reviewer",
+          "created_at"
+        ],
+        "title": "ReviewOut",
+        "description": "One stored review."
+      },
+      "ReviewSummary": {
+        "properties": {
+          "review_id": {
+            "type": "integer",
+            "title": "Review Id"
+          },
+          "prediction_id": {
+            "type": "integer",
+            "title": "Prediction Id"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision"
+          },
+          "reviewer": {
+            "type": "string",
+            "title": "Reviewer"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "review_id",
+          "prediction_id",
+          "decision",
+          "reviewer",
+          "created_at"
+        ],
+        "title": "ReviewSummary",
+        "description": "Latest review decision, shown next to a prediction."
+      },
+      "StudyList": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "studies": {
+            "items": {
+              "$ref": "#/components/schemas/StudyStatus"
+            },
+            "type": "array",
+            "title": "Studies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "studies"
+        ],
+        "title": "StudyList",
+        "description": "GET /studies."
+      },
+      "StudyStatus": {
+        "properties": {
+          "orthanc_study_id": {
+            "type": "string",
+            "title": "Orthanc Study Id"
+          },
+          "study_instance_uid": {
+            "type": "string",
+            "title": "Study Instance Uid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_synced",
+              "pending",
+              "analysed"
+            ],
+            "title": "Status"
+          },
+          "latest_prediction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PredictionSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "latest_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "orthanc_study_id",
+          "study_instance_uid",
+          "status"
+        ],
+        "title": "StudyStatus",
+        "description": "One Orthanc study and where it is in the workflow."
+      },
+      "SyncResult": {
+        "properties": {
+          "notice": {
+            "type": "string",
+            "title": "Notice",
+            "default": "Educational use only. Not for clinical use."
+          },
+          "orthanc_studies": {
+            "type": "integer",
+            "title": "Orthanc Studies"
+          },
+          "added": {
+            "type": "integer",
+            "title": "Added"
+          },
+          "already_synced": {
+            "type": "integer",
+            "title": "Already Synced"
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending"
+          },
+          "missing_from_orthanc": {
+            "type": "integer",
+            "title": "Missing From Orthanc"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orthanc_studies",
+          "added",
+          "already_synced",
+          "pending",
+          "missing_from_orthanc"
+        ],
+        "title": "SyncResult",
+        "description": "POST /studies/sync."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
