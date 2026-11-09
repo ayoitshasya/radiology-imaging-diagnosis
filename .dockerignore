@@ -1,0 +1,15 @@
+# Build context for backend/Dockerfile (context = repository root).
+# Whitelist: ignore everything, then allow only what the API image copies. Data, model
+# weights (mounted at run time), .env, .git, node_modules and reports other than the
+# threshold file can therefore never enter the context.
+*
+!requirements.txt
+!config.yaml
+!backend/
+!ml/
+!reports/classification_metrics.json
+
+# Never needed in the image, even inside allowed folders.
+**/__pycache__
+**/*.pyc
+backend/Dockerfile
