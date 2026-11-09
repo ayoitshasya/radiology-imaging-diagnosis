@@ -10,6 +10,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     restoreMocks: true,
     unstubGlobals: true,
+    unstubEnvs: true,
     // Tests never reach a real server; fetch is mocked and this base is only used in URLs.
     env: { VITE_API_BASE_URL: 'http://api.test' },
   },
