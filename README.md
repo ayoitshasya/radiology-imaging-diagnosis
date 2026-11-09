@@ -153,8 +153,9 @@ No test needs the real model weights. Locally the `needs_dvc` tests always run a
 loudly if the data is missing. In CI a database that cannot be reached fails the
 database tests instead of skipping them.
 
-Test and coverage record: [docs/test_results.md](docs/test_results.md) (the coverage run
-recorded there predates the viewer and container work).
+Test and coverage record: [docs/test_results.md](docs/test_results.md), recorded
+2026-11-09: 161 Python tests passed with 74% statement coverage, and 78 frontend tests
+passed.
 
 ## Documentation
 

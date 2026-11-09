@@ -4,19 +4,41 @@
 classifier on one public dataset (RSNA Pneumonia Detection Challenge) and say nothing about
 clinical performance.
 
-## Automated tests
+## Summary
+
+| Suite | Tests | Where it runs |
+|---|---|---|
+| Python (pytest) | 161 passed | locally, all 161 |
+| Python in CI | 159 of 161 | GitHub Actions; 2 `needs_dvc` tests deselected |
+| Frontend (Vitest) | 78 passed of 78 | locally and in CI |
+
+## Python tests
 
 | Item | Value |
 |---|---|
-| Date | 2026-11-09 10:05 (local time) |
+| Date | 2026-11-09 23:08 (local time) |
 | Command | `python -m pytest --cov=backend --cov=ml --cov=scripts --cov-report=term -p no:warnings` |
 | Environment | Windows 11, Python 3.11.18 (conda env `medimg`), CPU only; Orthanc and Postgres running via `docker compose` |
-| Result | 143 passed in 531.75s (0:08:51) |
-| Coverage (statements) | 73% (1835 statements, 504 not run) |
+| Result | 161 passed in 577.19s (0:09:37) |
+| Coverage (statements) | 74% (1990 statements, 518 not run) |
 
 No test was skipped. The database tests create and drop their own throwaway databases
-(`radiology_test`, `radiology_test_api`) on the compose Postgres and are skipped only
-when Postgres is unreachable; Orthanc is replaced by an in-process fake in all API tests.
+(`radiology_test`, `radiology_test_api`) on the compose Postgres; without Postgres they
+are skipped locally but fail in CI, so a CI run cannot pass without them. Orthanc is
+replaced by an in-process fake in all API tests.
+
+### What CI runs
+
+CI collection (`python -m pytest -m "not needs_dvc" --collect-only -q`): 159/161 tests collected (2 deselected) in 13.47s.
+The two deselected tests read data that only `dvc pull` restores, and the DVC storage is
+not reachable from CI, so they run locally only (they ran in the result above):
+
+- `tests/test_demo_studies.py::test_no_demo_study_is_in_full_train_or_val_split`: the
+  leakage check that every demo study comes from the test split.
+- `tests/test_classification.py::test_smoke_training_runs_end_to_end_on_sample`: one
+  training epoch on the RSNA sample.
+
+No test needs the real model weights.
 
 ### Coverage by file
 
@@ -29,7 +51,7 @@ backend\app\audit.py                                    10      0   100%
 backend\app\db.py                                       15      1    93%
 backend\app\deps.py                                     29      0   100%
 backend\app\inference.py                                55      2    96%
-backend\app\main.py                                     75      3    96%
+backend\app\main.py                                     78      3    96%
 backend\app\model_service.py                            47     22    53%
 backend\app\models.py                                   43      0   100%
 backend\app\orthanc.py                                  41      8    80%
@@ -39,7 +61,7 @@ backend\app\routers\audit_log.py                        33      0   100%
 backend\app\routers\reviews.py                          29      0   100%
 backend\app\routers\studies.py                          91      0   100%
 backend\app\schemas.py                                  90      0   100%
-backend\app\settings.py                                 29      0   100%
+backend\app\settings.py                                 30      0   100%
 backend\app\text.py                                     28      2    93%
 backend\migrations\env.py                               20      1    95%
 backend\migrations\versions\0001_initial_schema.py      25      4    84%
@@ -59,22 +81,45 @@ ml\preprocessing\build_dataset.py                      112     20    82%
 ml\preprocessing\dataset.py                             35      2    94%
 scripts\download_rsna_sample.py                         95     60    37%
 scripts\export_openapi.py                               29     16    45%
+scripts\reset_demo_state.py                             57     11    81%
 scripts\select_demo_negatives.py                        84     59    30%
 scripts\select_test_studies.py                          57     34    40%
+scripts\smoke_stack.py                                  94      3    97%
 scripts\upload_demo_to_orthanc.py                       93     53    43%
 scripts\verify_env.py                                   26     26     0%
 ------------------------------------------------------------------------
-TOTAL                                                 1835    504    73%
+TOTAL                                                 1990    518    74%
 ```
 
 Lower-coverage files are mostly command-line entry points and code that needs external
 resources not available in unit tests: the Kaggle download (`download_rsna_sample.py`,
 `select_demo_negatives.py`), the Orthanc upload (`upload_demo_to_orthanc.py`), the CLI
-parts of `evaluate.py` and `baselines.py`, and `verify_env.py`. Their core functions
-(sampling, split reproduction, anonymisation, threshold choice, bootstrap, baselines) are
+parts of `evaluate.py`, `baselines.py`, `select_test_studies.py` and `export_openapi.py`,
+and `verify_env.py`. Their core functions (sampling, split reproduction, anonymisation,
+threshold choice, bootstrap, baselines, schema rendering and its staleness check) are
 tested directly. `model_service.py` is partly covered because the tests inject a model
 instead of loading the checkpoint; the real load was verified by `/health` on the running
-stack.
+stack and by the stack smoke test (`scripts/smoke_stack.py`, itself covered by its own
+tests).
+
+## Frontend tests
+
+| Item | Value |
+|---|---|
+| Date | 2026-11-09 23:08 (local time) |
+| Commands | `npm run typecheck` (clean), `npm test` (Vitest 78 tests in 8 files, jsdom, `fetch` mocked) |
+| Result | 78 passed, 0 failed |
+
+| File | Tests passed |
+|---|---|
+| `src/api/client.test.ts` | 7 |
+| `src/api/types.test.ts` | 17 |
+| `src/components/Banner.test.tsx` | 5 |
+| `src/components/ReviewForm.test.tsx` | 10 |
+| `src/pages/AuditPage.test.tsx` | 7 |
+| `src/pages/StudyDetailPage.test.tsx` | 10 |
+| `src/pages/StudyListPage.test.tsx` | 13 |
+| `src/review/validation.test.ts` | 9 |
 
 ## Model results (from report files)
 
