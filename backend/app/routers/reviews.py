@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from backend.app.audit import record_event
-from backend.app.deps import SessionDep
+from backend.app.deps import SessionDep, StudyId
 from backend.app.models import Prediction, Review
 from backend.app.queries import latest_prediction, study_or_404
 from backend.app.schemas import NO_IDENTIFIERS, ReviewHistory, ReviewIn, ReviewOut
@@ -39,7 +39,7 @@ def review_out(review: Review, orthanc_study_id: str, study_instance_uid: str) -
         f"{NO_IDENTIFIERS}"
     ),
 )
-def review_study(orthanc_study_id: str, body: ReviewIn, session: SessionDep) -> ReviewOut:
+def review_study(orthanc_study_id: StudyId, body: ReviewIn, session: SessionDep) -> ReviewOut:
     """Store a review and its audit event in one transaction.
 
     The review row is flushed to get its ID, the audit event referencing it joins the
@@ -79,7 +79,7 @@ def review_study(orthanc_study_id: str, body: ReviewIn, session: SessionDep) -> 
 
 
 @router.get("/{orthanc_study_id}/reviews", response_model=ReviewHistory)
-def study_reviews(orthanc_study_id: str, session: SessionDep) -> ReviewHistory:
+def study_reviews(orthanc_study_id: StudyId, session: SessionDep) -> ReviewHistory:
     """Every review of the study's predictions, oldest first; empty if none yet."""
     study = study_or_404(session, orthanc_study_id)
     rows = session.scalars(

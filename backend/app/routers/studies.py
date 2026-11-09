@@ -10,7 +10,14 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from backend.app.audit import record_event
-from backend.app.deps import ModelDep, OrthancDep, OverlayCacheDep, SessionDep, SettingsDep
+from backend.app.deps import (
+    ModelDep,
+    OrthancDep,
+    OverlayCacheDep,
+    SessionDep,
+    SettingsDep,
+    StudyId,
+)
 from backend.app.inference import explain, load_study_image, png_bytes, predict_and_explain
 from backend.app.models import Prediction, Study
 from backend.app.queries import (
@@ -126,7 +133,7 @@ def prediction_out(session: Session, pred: Prediction, cached: bool) -> Predicti
 
 @router.post("/{orthanc_study_id}/analyse", response_model=PredictionOut)
 def analyse_study(
-    orthanc_study_id: str,
+    orthanc_study_id: StudyId,
     session: SessionDep,
     orthanc: OrthancDep,
     service: ModelDep,
@@ -186,7 +193,7 @@ def analyse_study(
 
 
 @router.get("/{orthanc_study_id}/result", response_model=PredictionOut)
-def study_result(orthanc_study_id: str, session: SessionDep) -> PredictionOut:
+def study_result(orthanc_study_id: StudyId, session: SessionDep) -> PredictionOut:
     """The latest stored prediction for a study; 404 if the study is unknown or unanalysed."""
     study_or_404(session, orthanc_study_id)
     pred = latest_prediction(session, orthanc_study_id)
@@ -207,7 +214,7 @@ def png_response(png: bytes, extra_headers: dict[str, str] | None = None) -> Res
     responses={200: {"content": {"image/png": {}}}},
 )
 def study_image(
-    orthanc_study_id: str, session: SessionDep, orthanc: OrthancDep, settings: SettingsDep
+    orthanc_study_id: StudyId, session: SessionDep, orthanc: OrthancDep, settings: SettingsDep
 ) -> Response:
     """The preprocessed image the model sees (224x224 grayscale PNG), built in memory."""
     study = study_or_404(session, orthanc_study_id)
@@ -220,7 +227,7 @@ def study_image(
     responses={200: {"content": {"image/png": {}}}},
 )
 def study_heatmap(
-    orthanc_study_id: str,
+    orthanc_study_id: StudyId,
     session: SessionDep,
     orthanc: OrthancDep,
     service: ModelDep,

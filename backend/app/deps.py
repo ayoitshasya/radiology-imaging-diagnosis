@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Path, Request
 from sqlalchemy.orm import Session
 
 from backend.app.db import session_scope
@@ -42,6 +42,17 @@ def get_overlay_cache(request: Request) -> OverlayCache:
     """The in-memory Grad-CAM overlay cache."""
     return request.app.state.overlay_cache
 
+
+# Orthanc study IDs are five dash-separated hex groups; this pattern accepts them and
+# rejects NUL bytes, quotes, slashes and oversized input with a 422 before any database
+# or Orthanc call.
+StudyId = Annotated[
+    str,
+    Path(
+        pattern=r"^[A-Za-z0-9._-]{1,64}$",
+        description="Orthanc study ID, e.g. 29aa9e33-a3c9c0ba-d412334d-8decdd60-7eedb09b",
+    ),
+]
 
 # Annotated aliases, FastAPI's recommended form for declaring dependencies once.
 OverlayCacheDep = Annotated[OverlayCache, Depends(get_overlay_cache)]
