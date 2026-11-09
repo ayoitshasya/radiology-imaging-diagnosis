@@ -1,0 +1,264 @@
+/* One small stylesheet; no UI kit. Colours meet WCAG AA contrast on their backgrounds. */
+
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --text: #1b1f24;
+  --muted: #4a5360;
+  --border: #c9ced6;
+  --accent: #0b5cad;
+  --focus: #b45309;
+  --banner-bg: #7a2e0e;
+  --banner-text: #ffffff;
+  --error-bg: #fdecec;
+  --error-border: #b42318;
+  --ok-bg: #e7f4ec;
+  --ok-text: #14532d;
+  --warn-bg: #fff4e0;
+  --warn-text: #7a4100;
+  --neutral-bg: #eceff3;
+  --neutral-text: #2f3742;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+/* Every interactive element gets a clearly visible keyboard focus ring. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary,
+button.small {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+button.small {
+  padding: 0.1rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 3rem;
+  z-index: 10;
+  background: var(--surface);
+  padding: 0.5rem;
+}
+
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 0.5rem 1rem;
+  background: var(--banner-bg);
+  color: var(--banner-text);
+  text-align: center;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.site-header nav {
+  display: flex;
+  gap: 1rem;
+}
+
+/* The current page is shown by underline and weight, not by colour alone. */
+.site-header nav a[aria-current='page'] {
+  font-weight: 700;
+  text-decoration-thickness: 3px;
+}
+
+main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+main:focus {
+  outline: none;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.field label {
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+
+caption {
+  text-align: left;
+  padding: 0.5rem 0;
+  color: var(--muted);
+}
+
+th,
+td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: var(--neutral-bg);
+}
+
+.uid {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.copy-status {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Badges always carry their meaning as text; colour only reinforces it. */
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-not_synced,
+.badge-none {
+  background: var(--neutral-bg);
+  color: var(--neutral-text);
+}
+
+.badge-pending,
+.badge-rejected {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+}
+
+.badge-analysed,
+.badge-approved {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--error-border);
+  background: var(--error-bg);
+}
+
+.error p {
+  margin: 0 0 0.5rem;
+}
+
+.error-title {
+  font-weight: 700;
+}
+
+.notice-box {
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border-left: 4px solid var(--accent);
+  background: var(--surface);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
