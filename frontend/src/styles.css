@@ -488,6 +488,23 @@ th {
   font-weight: 600;
 }
 
+.audit-detail {
+  margin: 0;
+  max-width: 28rem;
+  max-height: 12rem;
+  overflow: auto;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
 .muted {
   color: var(--muted);
 }
