@@ -1,8 +1,9 @@
 """Backend schema and health tests against a throwaway Postgres database.
 
 The database tests run the real Alembic migration into a separate database called
-radiology_test on the compose Postgres, so the dev database is never touched. They are
-skipped when Postgres is not reachable.
+radiology_test on the compose Postgres, so the dev database is never touched. When
+Postgres is not reachable they are skipped locally but fail in CI (see
+database_unavailable in conftest.py), so CI can never pass without running them.
 """
 
 import httpx
