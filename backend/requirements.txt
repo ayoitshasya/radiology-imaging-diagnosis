@@ -1,0 +1,39 @@
+# Runtime dependencies of the FastAPI backend only (used by backend/Dockerfile).
+# The root requirements.txt stays the full development environment (training, notebooks,
+# DVC, Kaggle, tests, lint). Every pin here must equal the root file's pin for the same
+# package; tests/test_requirements.py checks that.
+#
+# Chosen by tracing what the API loads at runtime (app import, alembic migration imports,
+# model load, prediction, Grad-CAM, PNG encoding) and verified by running the API tests
+# inside the image built from this file.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Model and Grad-CAM (CPU builds; see backend/Dockerfile for why the CPU index)
+torch==2.15.0+cpu
+torchvision==0.29.2+cpu
+numpy==2.4.6
+grad-cam==1.5.7
+matplotlib==3.11.2  # required by grad-cam; pinned to the development version
+opencv-python-headless==5.0.0.93
+
+# DICOM reading, including compressed transfer syntaxes
+pydicom==3.0.2
+pylibjpeg==2.1.0
+pylibjpeg-libjpeg==2.5.0
+python-gdcm==3.2.6
+
+# Known limitation: ml/preprocessing/build_dataset.py imports pandas and scikit-learn at
+# module level for its dataset-building code, and the backend imports preprocess_dicom
+# from that module, so both are needed although inference never calls them.
+pandas==3.1.0
+scikit-learn==1.9.1
+
+# API, database and configuration
+fastapi==0.162.0
+uvicorn==0.54.0  # plain: JSON API on one worker, no reload or websockets needed
+sqlalchemy==2.1.6
+psycopg2-binary==2.9.13
+alembic==1.20.1
+httpx==0.28.1
+pydantic-settings==2.16.2
+pyyaml==6.0.3

@@ -14,13 +14,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# requirements.txt pins torch==2.15.0+cpu and torchvision==0.29.2+cpu and adds
-# --extra-index-url https://download.pytorch.org/whl/cpu. On Linux the default PyPI torch
-# is the CUDA build, which pulls several GB of NVIDIA libraries this CPU-only service
-# never uses; the CPU index serves builds without them.
-# Known limitation: requirements.txt is the project's single pinned environment, so the
-# image also carries tools the API does not run (dvc, kaggle, pytest, ruff).
-COPY requirements.txt .
+# backend/requirements.txt holds only the API's runtime dependencies (the root
+# requirements.txt is the full development environment). It pins torch==2.15.0+cpu and
+# torchvision==0.29.2+cpu and adds --extra-index-url https://download.pytorch.org/whl/cpu:
+# on Linux the default PyPI torch is the CUDA build, which pulls several GB of NVIDIA
+# libraries this CPU-only service never uses; the CPU index serves builds without them.
+COPY backend/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # Non-root user with a home directory (matplotlib and torch write small caches there).

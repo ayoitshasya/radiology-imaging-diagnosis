@@ -3,7 +3,6 @@
 # weights (mounted at run time), .env, .git, node_modules and reports other than the
 # threshold file can therefore never enter the context.
 *
-!requirements.txt
 !config.yaml
 !backend/
 !ml/
