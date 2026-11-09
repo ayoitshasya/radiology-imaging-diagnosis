@@ -1,4 +1,5 @@
-# Local demo stack: Orthanc (DICOM store) and Postgres (predictions, reviews, audit log).
+# Local demo stack: Orthanc (DICOM store), Postgres (predictions, reviews, audit log),
+# the FastAPI backend and the React viewer. All ports are bound to 127.0.0.1 only.
 # Educational use only; never load real patient data.
 # Secrets come from .env (never committed); see .env.example for the variable names.
 name: radiology
@@ -16,6 +17,24 @@ services:
     volumes:
       - ./deploy/orthanc/orthanc.json:/etc/orthanc/orthanc.json:ro
       - orthanc-data:/var/lib/orthanc/db
+    healthcheck:
+      # The image has no healthcheck of its own. Unauthenticated requests get 401 because
+      # users are configured, which still proves the REST server is up; no password needed.
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import sys, urllib.request, urllib.error
+          try:
+              urllib.request.urlopen("http://127.0.0.1:8042/system", timeout=3)
+          except urllib.error.HTTPError as e:
+              sys.exit(0 if e.code == 401 else 1)
+          except Exception:
+              sys.exit(1)
+      interval: 5s
+      timeout: 5s
+      retries: 20
     restart: unless-stopped
 
   postgres:
@@ -35,6 +54,49 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    image: radiology-backend:local
+    # Bring the schema up to date, then serve. exec makes uvicorn PID 1 so it gets signals.
+    command:
+      - sh
+      - -c
+      - alembic -c backend/alembic.ini upgrade head && exec uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      # Inside the compose network the services are reached by name on their own ports.
+      # POSTGRES_PASSWORD must be URL-safe (no @ : / ? #) because it is placed in this URL.
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:?set in .env}:${POSTGRES_PASSWORD:?set in .env}@postgres:5432/${POSTGRES_DB:?set in .env}
+      ORTHANC_URL: http://orthanc:8042
+      ORTHANC_USERNAME: ${ORTHANC_USERNAME:?set in .env}
+      ORTHANC_PASSWORD: ${ORTHANC_PASSWORD:?set in .env}
+    volumes:
+      # Weights are never baked into the image; restore them with `dvc pull` on the host.
+      - ./models:/app/models:ro
+    ports:
+      - "127.0.0.1:${API_PORT:?set in .env}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      orthanc:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Built into the page; it is the API address as the browser on the host sees it.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?set in .env}
+    image: radiology-frontend:local
+    ports:
+      # Fixed at 5173: the backend's CORS setting allows exactly http://localhost:5173.
+      - "127.0.0.1:5173:8080"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:
