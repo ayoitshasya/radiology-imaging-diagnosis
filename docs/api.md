@@ -429,7 +429,7 @@ DELETE and TRUNCATE.
 | Parameter | Type | Rules |
 |---|---|---|
 | `study_instance_uid` | string | digits and dots, max 64 |
-| `event_type` | string | `study_synced`, `analysis_completed`, `analysis_returned_cached`, `review_submitted` |
+| `event_type` | string | `study_synced`, `analysis_completed`, `analysis_returned_cached`, `review_submitted`, `demo_reset` (written by `scripts/reset_demo_state.py`) |
 | `since` | ISO 8601 datetime | inclusive; UTC if no timezone |
 | `until` | ISO 8601 datetime | exclusive; UTC if no timezone; must not be before `since` |
 | `limit` | integer | 1 to 100, default 50 |

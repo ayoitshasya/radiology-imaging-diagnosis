@@ -380,7 +380,8 @@
                     "study_synced",
                     "analysis_completed",
                     "analysis_returned_cached",
-                    "review_submitted"
+                    "review_submitted",
+                    "demo_reset"
                   ],
                   "type": "string"
                 },

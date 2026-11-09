@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from backend.app.models import AuditLog
 
 EventType = Literal[
-    "study_synced", "analysis_completed", "analysis_returned_cached", "review_submitted"
+    "study_synced",
+    "analysis_completed",
+    "analysis_returned_cached",
+    "review_submitted",
+    "demo_reset",  # scripts/reset_demo_state.py: records what a demo reset deleted
 ]
 EVENT_TYPES: tuple[str, ...] = get_args(EventType)
 
