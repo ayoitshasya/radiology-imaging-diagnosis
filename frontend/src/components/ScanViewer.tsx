@@ -9,10 +9,12 @@ interface Props {
   shortUid: string
   /** Optional layer drawn exactly on top of the scan (same 224 x 224 frame). */
   overlay?: ReactNode
+  /** Text shown directly under the image, for example the overlay caption. */
+  caption?: ReactNode
 }
 
 /** The preprocessed scan from GET /studies/{id}/image, fetched as bytes into memory. */
-export function ScanViewer({ orthancStudyId, shortUid, overlay }: Props) {
+export function ScanViewer({ orthancStudyId, shortUid, overlay, caption }: Props) {
   const { state, reload } = useApiData((signal) => api.getImage(orthancStudyId, signal), [
     orthancStudyId,
   ])
@@ -31,6 +33,7 @@ export function ScanViewer({ orthancStudyId, shortUid, overlay }: Props) {
           {overlay}
         </div>
       ) : null}
+      {caption}
       <figcaption className="muted">
         The image the model sees: the study's DICOM from Orthanc, resized to 224 by 224
         grayscale. Not a diagnostic-quality display.

@@ -4,10 +4,12 @@ import { api } from '../api/client'
 import type { PredictionOut, StudyStatus } from '../api/types'
 import { StatusBadge } from '../components/Badges'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { OverlayCaption, OverlayControls, OverlayLayer, useHeatmap } from '../components/GradCam'
 import { ResultPanel } from '../components/ResultPanel'
 import { ScanViewer } from '../components/ScanViewer'
 import { ShortUid, shortUid } from '../components/ShortUid'
 import { useApiData } from '../hooks/useApiData'
+import { useObjectUrl } from '../hooks/useObjectUrl'
 
 export function StudyDetailPage() {
   const { id = '' } = useParams()
@@ -81,6 +83,19 @@ function SyncedStudy({ study }: { study: StudyStatus }) {
 
   const result = fresh ?? (stored.state.status === 'ok' ? stored.state.data : null)
 
+  // Overlay is OFF by default; the heatmap is requested the first time it is switched on.
+  const [overlayOn, setOverlayOn] = useState(false)
+  const [overlayRequested, setOverlayRequested] = useState(false)
+  const [opacity, setOpacity] = useState(50)
+  const heatmap = useHeatmap(id, result?.prediction_id ?? -1, overlayRequested && result !== null)
+  const heatmapUrl = useObjectUrl(heatmap.state.status === 'ok' ? heatmap.state.data : null)
+  const short = shortUid(study.study_instance_uid)
+
+  function toggleOverlay(on: boolean) {
+    setOverlayOn(on)
+    if (on) setOverlayRequested(true)
+  }
+
   async function analyse() {
     setAnalysing(true)
     setAnalyseError(null)
@@ -97,7 +112,28 @@ function SyncedStudy({ study }: { study: StudyStatus }) {
     <>
       <StudyHeader study={study} analysed={result !== null} />
       <div className="detail-grid">
-        <ScanViewer orthancStudyId={id} shortUid={shortUid(study.study_instance_uid)} />
+        <div>
+          <ScanViewer
+            orthancStudyId={id}
+            shortUid={short}
+            overlay={
+              result && overlayOn && heatmapUrl ? (
+                <OverlayLayer url={heatmapUrl} opacity={opacity} shortUid={short} />
+              ) : null
+            }
+            caption={result && overlayOn ? <OverlayCaption label={result.label} /> : null}
+          />
+          {result ? (
+            <OverlayControls
+              on={overlayOn}
+              onToggle={toggleOverlay}
+              opacity={opacity}
+              onOpacity={setOpacity}
+              heatmap={heatmap.state}
+              onRetry={heatmap.reload}
+            />
+          ) : null}
+        </div>
         <div>
           {stored.state.status === 'loading' ? (
             <p role="status">Loading result{'…'}</p>
