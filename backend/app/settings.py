@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     device: str = "cpu"
     target_layer: str = ""
     image_size: int = 224
+    cors_origins: list[str] = []
 
 
 def load_project_config(path: Path = ROOT / "config.yaml") -> dict:
@@ -53,6 +54,7 @@ def load_project_config(path: Path = ROOT / "config.yaml") -> dict:
         "device": cfg["device"],
         "target_layer": cfg["explainability"]["target_layer"],
         "image_size": cfg["preprocess"]["size"],
+        "cors_origins": list(b["cors_origins"]),
     }
 
 

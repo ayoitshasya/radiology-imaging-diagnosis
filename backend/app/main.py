@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -21,7 +22,7 @@ from backend.app.orthanc import OrthancClient, OrthancError, OrthancNotFound, Or
 from backend.app.routers.audit_log import router as audit_router
 from backend.app.routers.reviews import router as reviews_router
 from backend.app.routers.studies import router as studies_router
-from backend.app.settings import Settings, get_settings
+from backend.app.settings import Settings, get_settings, load_project_config
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +84,20 @@ def create_app(
         else:
             status = 502
         return JSONResponse(status_code=status, content={"detail": str(exc)})
+
+    # Middleware must exist before startup, so the origins are read here rather than in the
+    # lifespan; config.yaml alone suffices, so importing the app needs no secrets.
+    cors_origins = (
+        settings.cors_origins if settings is not None else load_project_config()["cors_origins"]
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+        expose_headers=["X-Notice"],
+        allow_credentials=False,
+    )
 
     app.include_router(studies_router)
     app.include_router(reviews_router)

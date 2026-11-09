@@ -92,6 +92,8 @@ backend:
   metrics_report: reports/classification_metrics.json
   orthanc_timeout_seconds: 10
   notice: "Educational use only. Not for clinical use."
+  # Browser origins allowed to call the API: only the Vite dev server of the viewer.
+  cors_origins: ["http://localhost:5173"]
 
 evaluation:
   bootstrap_resamples: 1000
