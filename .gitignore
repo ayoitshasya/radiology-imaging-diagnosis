@@ -29,8 +29,11 @@ frontend/dist/
 !/data/**/
 !/data/**/.gitkeep
 !/data/**/*.dvc
-# Weights stay out of git; only their DVC pointer files are tracked
-/models/*
+# Weights stay out of git; only their DVC pointer files are tracked.
+# `?*` rather than `*`: for git both mean every entry inside models/, but DVC's ignore
+# matcher also lets `*` match the empty name, treats the models/ folder itself as ignored,
+# skips the pointer, and a bare `dvc pull` or `dvc push` then misses the weights.
+/models/?*
 !/models/*.dvc
 # Archives such as downloaded Kaggle results bundles
 *.zip
