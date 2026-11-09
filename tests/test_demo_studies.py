@@ -22,10 +22,7 @@ sts = load_script("select_test_studies")
 sdn = load_script("select_demo_negatives")
 
 
-@pytest.mark.skipif(
-    not (DEMO_CSV.exists() and FULL_MANIFEST.exists()),
-    reason="demo CSV or full manifest not present (run dvc pull)",
-)
+@pytest.mark.needs_dvc  # reads the DVC-tracked demo CSV and full manifest
 def test_no_demo_study_is_in_full_train_or_val_split():
     demo = pd.read_csv(DEMO_CSV)
     split = pd.read_csv(FULL_MANIFEST).set_index("image_id")["split"]

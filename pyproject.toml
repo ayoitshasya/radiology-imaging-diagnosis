@@ -14,4 +14,7 @@ select = ["E", "F", "W", "I", "B", "UP"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-ra"
+addopts = "-ra --strict-markers"
+markers = [
+    "needs_dvc: needs files restored by `dvc pull` (data under data/); always run locally, deselected in CI with -m 'not needs_dvc' because CI has no access to the DVC remote",
+]

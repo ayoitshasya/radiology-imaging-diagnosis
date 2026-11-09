@@ -19,6 +19,7 @@ from backend.app.main import create_app
 from backend.app.model_service import ModelService
 from backend.app.orthanc import OrthancClient
 from backend.app.settings import ROOT, get_settings
+from tests.conftest import database_unavailable
 
 TEST_DB = "radiology_test"
 SHA = "a" * 64
@@ -36,14 +37,14 @@ def test_engine():
     """Fresh radiology_test database with the real migration applied."""
     url = _server_url()
     if url is None:
-        pytest.skip("DATABASE_URL not configured")
+        database_unavailable("DATABASE_URL not configured")
     admin = create_engine(url, isolation_level="AUTOCOMMIT")
     try:
         with admin.connect() as conn:
             conn.execute(text(f'DROP DATABASE IF EXISTS "{TEST_DB}" WITH (FORCE)'))
             conn.execute(text(f'CREATE DATABASE "{TEST_DB}"'))
     except DBAPIError:
-        pytest.skip("Postgres not reachable")
+        database_unavailable("Postgres not reachable")
     test_url = url.set(database=TEST_DB).render_as_string(hide_password=False)
     cfg = Config(str(ROOT / "backend" / "alembic.ini"))
     cfg.attributes["database_url"] = test_url

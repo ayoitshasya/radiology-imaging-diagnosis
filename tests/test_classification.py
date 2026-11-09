@@ -111,10 +111,7 @@ def test_majority_class_tie_goes_to_negative():
     assert majority_class(pd.DataFrame({"label": [1, 1, 0]})) == 1
 
 
-@pytest.mark.skipif(
-    not (SAMPLE_DIR / "manifest.csv").exists(),
-    reason="processed RSNA sample not present (run dvc pull)",
-)
+@pytest.mark.needs_dvc  # trains on the DVC-tracked processed RSNA sample
 def test_smoke_training_runs_end_to_end_on_sample(tmp_path):
     cfg = load_config()
     log = train(

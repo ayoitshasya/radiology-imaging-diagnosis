@@ -4,6 +4,7 @@ Tests never need real patient data, never touch the dev database and never reach
 network.
 """
 
+import os
 import re
 from pathlib import Path
 
@@ -136,6 +137,18 @@ class FakeOrthanc:
 API_TEST_DB = "radiology_test_api"
 
 
+def database_unavailable(reason: str) -> None:
+    """Skip a database test locally, but fail it in CI.
+
+    Locally, running without the compose Postgres is a normal choice. In CI (GitHub sets
+    CI=true) a missing database would turn every database test into a silent skip and the
+    job would still pass, so it must fail instead.
+    """
+    if os.environ.get("CI"):
+        pytest.fail(f"{reason}; CI must run the database tests", pytrace=False)
+    pytest.skip(reason)
+
+
 @pytest.fixture
 def api_engine():
     """A fresh database with all migrations applied, dropped after the test."""
@@ -150,14 +163,14 @@ def api_engine():
     try:
         url = make_url(get_settings().database_url.get_secret_value())
     except Exception:  # noqa: BLE001 - no settings means the database tests cannot run
-        pytest.skip("DATABASE_URL not configured")
+        database_unavailable("DATABASE_URL not configured")
     admin = create_engine(url, isolation_level="AUTOCOMMIT")
     try:
         with admin.connect() as conn:
             conn.execute(text(f'DROP DATABASE IF EXISTS "{API_TEST_DB}" WITH (FORCE)'))
             conn.execute(text(f'CREATE DATABASE "{API_TEST_DB}"'))
     except DBAPIError:
-        pytest.skip("Postgres not reachable")
+        database_unavailable("Postgres not reachable")
     test_url = url.set(database=API_TEST_DB).render_as_string(hide_password=False)
     cfg = Config(str(ROOT / "backend" / "alembic.ini"))
     cfg.attributes["database_url"] = test_url
